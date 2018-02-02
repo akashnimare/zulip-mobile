@@ -34,6 +34,7 @@
   "Why not start the conversation?": "चलो बातचीत शुरू करें?",
   "Chat": "बातचीत शुरू करें",
   "Log in with Google": "Google के साथ प्रवेश करें",
+  "Log in with GitHub": "GitHub के साथ प्रवेश करें",
   "Log in with password": "पासवर्ड से प्रवेश करें",
   "Log in with dev account": "देव खाते से लॉग इन करें",
   "Can not connect to server": "सर्वर से कनेक्ट नहीं हो पा रहा",
@@ -127,6 +128,5 @@
   "Pin": "पिन",
   "Active": "सक्रिय उपयोगकर्ता",
   "Idle": "दूर उपयोगकर्ताओं",
-  "Offline": "ऑफ़लाइन उपयोगकर्ता",
-  "Do not mark messages read on scroll": "Do not mark messages read on scroll"
+  "Offline": "ऑफ़लाइन उपयोगकर्ता"
 }
