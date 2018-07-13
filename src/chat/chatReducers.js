@@ -2,7 +2,7 @@
 import isEqual from 'lodash.isequal';
 
 import type {
-  MessageState,
+  MessagesState,
   MessageAction,
   MessageFetchCompleteAction,
   EventReactionAddAction,
@@ -23,17 +23,17 @@ import {
   EVENT_REACTION_REMOVE,
   EVENT_UPDATE_MESSAGE,
 } from '../actionConstants';
-import { isMessageInNarrow, getNarrowFromMessage } from '../utils/narrow';
+import { isMessageInNarrow } from '../utils/narrow';
 import { groupItemsById } from '../utils/misc';
 import chatUpdater from './chatUpdater';
 import { NULL_ARRAY, NULL_OBJECT } from '../nullObjects';
 
-const initialState: MessageState = NULL_OBJECT;
+const initialState: MessagesState = NULL_OBJECT;
 
 const messageFetchComplete = (
-  state: MessageState,
+  state: MessagesState,
   action: MessageFetchCompleteAction,
-): MessageState => {
+): MessagesState => {
   const key = JSON.stringify(action.narrow);
   const messages = state[key] || NULL_ARRAY;
   const messagesById = groupItemsById(messages);
@@ -42,7 +42,9 @@ const messageFetchComplete = (
     ? action.messages.map(
         item =>
           messagesById[item.id]
-            ? isEqual(messagesById[item.id], item) ? messagesById[item.id] : item
+            ? isEqual(messagesById[item.id], item)
+              ? messagesById[item.id]
+              : item
             : item,
       )
     : action.messages
@@ -56,7 +58,7 @@ const messageFetchComplete = (
   };
 };
 
-const eventReactionAdd = (state: MessageState, action: EventReactionAddAction): MessageState =>
+const eventReactionAdd = (state: MessagesState, action: EventReactionAddAction): MessagesState =>
   chatUpdater(state, action.messageId, oldMessage => ({
     ...oldMessage,
     reactions: oldMessage.reactions.concat({
@@ -66,9 +68,9 @@ const eventReactionAdd = (state: MessageState, action: EventReactionAddAction): 
   }));
 
 const eventReactionRemove = (
-  state: MessageState,
+  state: MessagesState,
   action: EventReactionRemoveAction,
-): MessageState =>
+): MessagesState =>
   chatUpdater(state, action.messageId, oldMessage => ({
     ...oldMessage,
     reactions: oldMessage.reactions.filter(
@@ -76,9 +78,9 @@ const eventReactionRemove = (
     ),
   }));
 
-const eventNewMessage = (state: MessageState, action: EventNewMessageAction): MessageState => {
+const eventNewMessage = (state: MessagesState, action: EventNewMessageAction): MessagesState => {
   let stateChange = false;
-  let newState = Object.keys(state).reduce((msg, key) => {
+  const newState = Object.keys(state).reduce((msg, key) => {
     const isInNarrow = isMessageInNarrow(action.message, JSON.parse(key), action.ownEmail);
     const isCaughtUp = action.caughtUp[key] && action.caughtUp[key].newer;
     const messageDoesNotExist =
@@ -94,23 +96,13 @@ const eventNewMessage = (state: MessageState, action: EventNewMessageAction): Me
     return msg;
   }, {});
 
-  const key = JSON.stringify(getNarrowFromMessage(action.message, action.ownEmail));
-  if (!stateChange && state[key] === undefined) {
-    // new message is in new narrow in which we don't have any message
-    stateChange = true;
-    newState = {
-      ...state,
-      [key]: [action.message],
-    };
-  }
-
   return stateChange ? newState : state;
 };
 
 const eventMessageDelete = (
-  state: MessageState,
+  state: MessagesState,
   action: EventMessageDeleteAction,
-): MessageState => {
+): MessagesState => {
   let stateChange = false;
 
   const newState = Object.keys(state).reduce((updatedState, key) => {
@@ -122,7 +114,10 @@ const eventMessageDelete = (
   return stateChange ? newState : state;
 };
 
-const eventUpdateMessage = (state: MessageState, action: EventUpdateMessageAction): MessageState =>
+const eventUpdateMessage = (
+  state: MessagesState,
+  action: EventUpdateMessageAction,
+): MessagesState =>
   chatUpdater(state, action.message_id, oldMessage => ({
     ...oldMessage,
     content: action.rendered_content || oldMessage.content,
@@ -154,7 +149,7 @@ const eventUpdateMessage = (state: MessageState, action: EventUpdateMessageActio
     last_edit_timestamp: action.edit_timestamp,
   }));
 
-export default (state: MessageState = initialState, action: MessageAction): MessageState => {
+export default (state: MessagesState = initialState, action: MessageAction): MessagesState => {
   switch (action.type) {
     case APP_REFRESH:
     case LOGOUT:

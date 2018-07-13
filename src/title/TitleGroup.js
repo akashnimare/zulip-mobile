@@ -1,40 +1,38 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import type { PresenceState, User } from '../types';
+import type { Context, PresenceState, User } from '../types';
 import { Avatar } from '../common';
-
-const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-  },
-  avatar: {
-    paddingRight: 8,
-  },
-});
+import { getRecipientsInGroupNarrow, getPresence } from '../selectors';
 
 type Props = {
   recipients: User[],
   presence: PresenceState,
 };
 
-export default class TitleGroup extends PureComponent<Props> {
+class TitleGroup extends PureComponent<Props> {
+  context: Context;
   props: Props;
 
+  static contextTypes = {
+    styles: () => null,
+  };
+
   render() {
+    const { styles } = this.context;
     const { recipients, presence } = this.props;
 
     return (
-      <View style={styles.wrapper}>
+      <View style={styles.navWrapper}>
         {recipients.map((user, index) => (
-          <View key={user.email} style={styles.avatar}>
+          <View key={user.email} style={styles.titleAvatar}>
             <Avatar
               size={32}
-              name={user.fullName}
-              avatarUrl={user.avatarUrl}
+              name={user.full_name}
+              avatarUrl={user.avatar_url}
               email={user.email}
               presence={presence[user.email]}
             />
@@ -44,3 +42,8 @@ export default class TitleGroup extends PureComponent<Props> {
     );
   }
 }
+
+export default connect((state, props) => ({
+  recipients: getRecipientsInGroupNarrow(props.narrow)(state),
+  presence: getPresence(state),
+}))(TitleGroup);

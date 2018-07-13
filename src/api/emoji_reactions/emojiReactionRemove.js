@@ -1,5 +1,5 @@
 /* @flow */
-import type { Presences, Auth } from '../../types';
+import type { Auth, ApiResponse } from '../../types';
 import { apiDelete } from '../apiFetch';
 
 export default (
@@ -8,8 +8,8 @@ export default (
   reactionType: string,
   emojiCode: string,
   emojiName: string,
-): Presences =>
-  apiDelete(auth, `messages/${messageId}/reactions`, res => res.presences, {
+): Promise<ApiResponse> =>
+  apiDelete(auth, `messages/${messageId}/reactions`, res => res, {
     reaction_type: reactionType,
     emoji_code: emojiCode,
     emoji_name: emojiName,

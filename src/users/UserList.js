@@ -2,7 +2,7 @@
 import React, { PureComponent } from 'react';
 import { StyleSheet, SectionList } from 'react-native';
 
-import type { StyleObj, User } from '../types';
+import type { PresenceState, Style, User } from '../types';
 import { SectionHeader, SearchEmptyState } from '../common';
 import UserItem from './UserItem';
 import { sortUserList, filterUserList, groupUsersByStatus } from '../users/userHelpers';
@@ -14,11 +14,11 @@ const styles = StyleSheet.create({
 });
 
 type Props = {
-  style?: StyleObj,
+  style?: Style,
   filter: string,
   users: User[],
   selected: User[],
-  presences: Object,
+  presences: PresenceState,
   onPress: (email: string) => void,
 };
 
@@ -59,12 +59,12 @@ export default class UserList extends PureComponent<Props> {
         renderItem={({ item }) => (
           <UserItem
             key={item.email}
-            fullName={item.fullName}
-            avatarUrl={item.avatarUrl}
+            fullName={item.full_name}
+            avatarUrl={item.avatar_url}
             email={item.email}
             presence={presences[item.email]}
             onPress={onPress}
-            isSelected={!!selected.find(user => user.id === item.id)}
+            isSelected={!!selected.find(user => user.user_id === item.id)}
           />
         )}
         renderSectionHeader={({ section }) =>

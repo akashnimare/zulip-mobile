@@ -23,12 +23,15 @@ import TimingScreen from '../diagnostics/TimingScreen';
 import NotificationDiagScreen from '../diagnostics/NotificationDiagScreen';
 import StorageScreen from '../diagnostics/StorageScreen';
 import LightboxScreen from '../lightbox/LightboxScreen';
-import GroupScreen from '../group/GroupScreen';
+import GroupScreen from '../user-groups/GroupScreen';
+import InviteUsersScreen from '../streams/InviteUsersScreen';
 import StreamScreen from '../streams/StreamScreen';
 import CreateStreamScreen from '../streams/CreateStreamScreen';
 import EditStreamScreen from '../streams/EditStreamScreen';
 import NotificationsScreen from '../settings/NotificationsScreen';
 import TopicListScreen from '../topics/TopicListScreen';
+import WelcomeHelpScreen from '../start/WelcomeHelpScreen';
+import WelcomeScreen from '../start/WelcomeScreen';
 
 export default StackNavigator(
   {
@@ -49,6 +52,7 @@ export default StackNavigator(
     language: { screen: LanguageScreen },
     lightbox: { screen: LightboxScreen },
     group: { screen: GroupScreen },
+    'invite-users': { screen: InviteUsersScreen },
     diagnostics: { screen: DiagnosticsScreen },
     variables: { screen: VariablesScreen },
     timing: { screen: TimingScreen },
@@ -60,6 +64,8 @@ export default StackNavigator(
     topics: { screen: TopicListScreen },
     notifDiag: { screen: NotificationDiagScreen },
     notifications: { screen: NotificationsScreen },
+    'welcome-help': { screen: WelcomeHelpScreen },
+    welcome: { screen: WelcomeScreen },
   },
   {
     initialRouteName: 'main',

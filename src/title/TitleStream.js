@@ -1,57 +1,47 @@
 /* @flow */
-import React, { PureComponent } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { connect } from 'react-redux';
 
-import type { Narrow, Stream } from '../types';
+import React, { PureComponent } from 'react';
+import { Text, View } from 'react-native';
+
+import type { Context, Narrow, Subscription } from '../types';
 import StreamIcon from '../streams/StreamIcon';
 import { isTopicNarrow } from '../utils/narrow';
-
-const styles = StyleSheet.create({
-  wrapper: {
-    alignItems: 'flex-start',
-    flex: 1,
-  },
-  streamRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  streamText: {
-    marginLeft: 4,
-    fontSize: 18,
-  },
-  topic: {
-    fontSize: 13,
-    opacity: 0.8,
-  },
-});
+import { getStreamInNarrow } from '../selectors';
 
 type Props = {
   narrow: Narrow,
-  stream: Stream,
+  stream: Subscription,
   color: string,
 };
 
-export default class TitleStream extends PureComponent<Props> {
+class TitleStream extends PureComponent<Props> {
+  context: Context;
   props: Props;
 
+  static contextTypes = {
+    styles: () => null,
+  };
+
   render() {
+    const { styles } = this.context;
     const { narrow, stream, color } = this.props;
 
     return (
-      <View style={styles.wrapper}>
-        <View style={styles.streamRow}>
+      <View style={[styles.navWrapper, styles.titleStreamWrapper]}>
+        <View style={styles.titleStreamRow}>
           <StreamIcon
             isMuted={!stream.in_home_view}
             isPrivate={stream.invite_only}
             color={color}
             size={20}
           />
-          <Text style={[styles.streamText, { color }]} numberOfLines={1} ellipsizeMode="tail">
+          <Text style={[styles.navTitle, { color }]} numberOfLines={1} ellipsizeMode="tail">
             {stream.name}
           </Text>
         </View>
         {isTopicNarrow(narrow) && (
-          <Text style={[styles.topic, { color }]} numberOfLines={1} ellipsizeMode="tail">
+          <Text style={[styles.navSubtitle, { color }]} numberOfLines={1} ellipsizeMode="tail">
             {narrow[1].operand}
           </Text>
         )}
@@ -59,3 +49,7 @@ export default class TitleStream extends PureComponent<Props> {
     );
   }
 }
+
+export default connect((state, props) => ({
+  stream: getStreamInNarrow(props.narrow)(state),
+}))(TitleStream);

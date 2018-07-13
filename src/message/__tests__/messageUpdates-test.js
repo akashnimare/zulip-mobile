@@ -21,6 +21,7 @@ describe('getMessageTransitionProps', () => {
       oldMessagesAdded: false,
       onlyOneNewMessage: false,
       sameNarrow: true,
+      messagesReplaced: false,
     });
   });
 
@@ -44,6 +45,7 @@ describe('getMessageTransitionProps', () => {
       oldMessagesAdded: true,
       onlyOneNewMessage: false,
       sameNarrow: true,
+      messagesReplaced: false,
     });
   });
 
@@ -67,6 +69,7 @@ describe('getMessageTransitionProps', () => {
       oldMessagesAdded: false,
       onlyOneNewMessage: false,
       sameNarrow: true,
+      messagesReplaced: false,
     });
   });
 
@@ -90,6 +93,31 @@ describe('getMessageTransitionProps', () => {
       oldMessagesAdded: false,
       onlyOneNewMessage: true,
       sameNarrow: true,
+      messagesReplaced: false,
+    });
+  });
+
+  test('when different narrows do not consider new message', () => {
+    const prevProps = {
+      messages: [{ id: 2 }, { id: 3 }, { id: 4 }],
+      narrow: 'some narrow',
+    };
+    const nextProps = {
+      messages: [{ id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }],
+      narrow: 'another narrow',
+    };
+
+    const result = getMessageTransitionProps(prevProps, nextProps);
+
+    expect(result).toEqual({
+      newMessagesAdded: false,
+      noMessages: false,
+      noNewMessages: false,
+      allNewMessages: false,
+      oldMessagesAdded: false,
+      onlyOneNewMessage: false,
+      sameNarrow: false,
+      messagesReplaced: false,
     });
   });
 
@@ -113,6 +141,31 @@ describe('getMessageTransitionProps', () => {
       oldMessagesAdded: false,
       onlyOneNewMessage: false,
       sameNarrow: true,
+      messagesReplaced: false,
+    });
+  });
+
+  test('recognize when messages are invalidated and replaced', () => {
+    const prevProps = {
+      messages: [{ id: 1 }, { id: 2 }],
+      narrow: 'some narrow',
+    };
+    const nextProps = {
+      messages: [{ id: 4 }, { id: 5 }, { id: 6 }],
+      narrow: 'some narrow',
+    };
+
+    const result = getMessageTransitionProps(prevProps, nextProps);
+
+    expect(result).toEqual({
+      newMessagesAdded: true,
+      noMessages: false,
+      noNewMessages: false,
+      allNewMessages: false,
+      oldMessagesAdded: false,
+      onlyOneNewMessage: false,
+      sameNarrow: true,
+      messagesReplaced: true,
     });
   });
 });
@@ -160,6 +213,21 @@ describe('getMessageUpdateStrategy', () => {
     const result = getMessageUpdateStrategy(getMessageTransitionProps(prevProps, nextProps));
 
     expect(result).toEqual('replace');
+  });
+
+  test('when messages replaced go to anchor', () => {
+    const prevProps = {
+      messages: [{ id: 1 }, { id: 2 }, { id: 3 }],
+      narrow: 'some narrow',
+    };
+    const nextProps = {
+      messages: [{ id: 5 }, { id: 6 }, { id: 7 }],
+      narrow: 'some narrow',
+    };
+
+    const result = getMessageUpdateStrategy(getMessageTransitionProps(prevProps, nextProps));
+
+    expect(result).toEqual('scroll-to-anchor');
   });
 
   test('when older messages loaded preserve scroll position', () => {

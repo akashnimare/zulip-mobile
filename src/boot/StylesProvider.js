@@ -1,9 +1,10 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { StyleSheet } from 'react-native';
 
-import type { ChildrenArray } from '../types';
-import connectWithActions from '../connectWithActions';
+import type { ChildrenArray, ThemeType } from '../types';
 import { getSettings } from '../directSelectors';
 import themeCreator from '../styles/theme';
 import themeDark from '../styles/themeDark';
@@ -18,7 +19,7 @@ const themeNameToObject = {
 const Dummy = props => props.children;
 
 type Props = {
-  theme: string,
+  theme: ThemeType,
   children?: ChildrenArray<*>,
 };
 
@@ -47,6 +48,6 @@ class StyleProvider extends PureComponent<Props> {
   }
 }
 
-export default connectWithActions(state => ({
+export default connect(state => ({
   theme: getSettings(state).theme,
 }))(StyleProvider);

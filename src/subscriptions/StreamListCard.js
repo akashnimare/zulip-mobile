@@ -1,25 +1,30 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import type { Actions, Auth } from '../types';
+import type { Auth, Dispatch, GlobalState } from '../types';
 import { ZulipButton } from '../common';
 import { subscriptionAdd, subscriptionRemove } from '../api';
 import { streamNarrow } from '../utils/narrow';
 import StreamList from '../streams/StreamList';
+import { getAuth, getCanCreateStreams, getStreams, getSubscriptions } from '../selectors';
+import { doNarrow, navigateToCreateStream } from '../actions';
 
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
   },
   button: {
-    margin: 10,
+    margin: 16,
   },
 });
 
 type Props = {
-  actions: Actions,
+  dispatch: Dispatch,
   auth: Auth,
+  canCreateStreams: boolean,
   streams: [],
   subscriptions: [],
 };
@@ -28,7 +33,7 @@ type State = {
   filter: string,
 };
 
-export default class StreamListCard extends PureComponent<Props, State> {
+class StreamListCard extends PureComponent<Props, State> {
   props: Props;
 
   state: State;
@@ -54,12 +59,12 @@ export default class StreamListCard extends PureComponent<Props, State> {
   };
 
   handleNarrow = (streamName: string) => {
-    const { actions } = this.props;
-    actions.doNarrow(streamNarrow(streamName));
+    const { dispatch } = this.props;
+    dispatch(doNarrow(streamNarrow(streamName)));
   };
 
   render() {
-    const { actions, streams, subscriptions } = this.props;
+    const { dispatch, canCreateStreams, streams, subscriptions } = this.props;
     const filteredStreams = streams.filter(x => x.name.includes(this.state.filter));
     const subsAndStreams = filteredStreams.map(x => ({
       ...x,
@@ -68,11 +73,16 @@ export default class StreamListCard extends PureComponent<Props, State> {
 
     return (
       <View style={styles.wrapper}>
-        <ZulipButton
-          style={styles.button}
-          text="Create new stream"
-          onPress={actions.navigateToCreateStream}
-        />
+        {canCreateStreams && (
+          <ZulipButton
+            style={styles.button}
+            secondary
+            text="Create new stream"
+            onPress={() => {
+              dispatch(navigateToCreateStream());
+            }}
+          />
+        )}
         <StreamList
           streams={subsAndStreams}
           showSwitch
@@ -85,3 +95,10 @@ export default class StreamListCard extends PureComponent<Props, State> {
     );
   }
 }
+
+export default connect((state: GlobalState) => ({
+  auth: getAuth(state),
+  canCreateStreams: getCanCreateStreams(state),
+  streams: getStreams(state),
+  subscriptions: getSubscriptions(state),
+}))(StreamListCard);

@@ -6,17 +6,18 @@ import {
   getAllMessages,
   getSubscriptions,
   getMute,
-  getUsers,
   getStreams,
   getOutbox,
 } from '../directSelectors';
 import { getCaughtUpForActiveNarrow } from '../caughtup/caughtUpSelectors';
+import { getAllUsersAndBots } from '../users/userSelectors';
 import { getIsFetching } from './fetchingSelectors';
 import {
   isAllPrivateNarrow,
   isPrivateOrGroupNarrow,
   isStreamNarrow,
   isHomeNarrow,
+  isPrivateNarrow,
   canSendToNarrow,
   isStreamOrTopicNarrow,
 } from '../utils/narrow';
@@ -38,8 +39,12 @@ export const outboxMessagesForCurrentNarrow = (narrow: Narrow) =>
     }
 
     return outboxMessages.filter(item => {
-      if (isAllPrivateNarrow(narrow) && isPrivateOrGroupNarrow(item.narrow)) return true;
-      if (isStreamNarrow(narrow) && item.narrow[0].operand === narrow[0].operand) return true;
+      if (isAllPrivateNarrow(narrow) && isPrivateOrGroupNarrow(item.narrow)) {
+        return true;
+      }
+      if (isStreamNarrow(narrow) && item.narrow[0].operand === narrow[0].operand) {
+        return true;
+      }
       return JSON.stringify(item.narrow) === JSON.stringify(narrow);
     });
   });
@@ -89,15 +94,18 @@ export const getLastTopicForNarrow = (narrow: Narrow) =>
   });
 
 export const getUserInPmNarrow = (narrow: Narrow) =>
-  createSelector(getUsers, users => users.find(x => x.email === narrow[0].operand) || NULL_USER);
+  createSelector(
+    getAllUsersAndBots,
+    allUsersAndBots => allUsersAndBots.find(x => x.email === narrow[0].operand) || NULL_USER,
+  );
 
 export const getRecipientsInGroupNarrow = (narrow: Narrow) =>
   createSelector(
-    getUsers,
-    users =>
+    getAllUsersAndBots,
+    allUsersAndBots =>
       !narrow || narrow.length === 0
         ? []
-        : narrow[0].operand.split(',').map(r => users.find(x => x.email === r) || []),
+        : narrow[0].operand.split(',').map(r => allUsersAndBots.find(x => x.email === r) || []),
   );
 
 export const getStreamInNarrow = (narrow: Narrow) =>
@@ -136,3 +144,16 @@ export const getMessagesById = (narrow: Narrow) =>
   createSelector(getMessagesFromChatState(narrow), groupItemsById);
 
 export const canSendToActiveNarrow = (narrow: Narrow) => canSendToNarrow(narrow);
+
+export const isNarrowValid = (narrow: Narrow) =>
+  createSelector(getStreams, getAllUsersAndBots, (streams, allUsersAndBots) => {
+    if (isStreamOrTopicNarrow(narrow)) {
+      return streams.find(s => s.name === narrow[0].operand) !== undefined;
+    }
+
+    if (isPrivateNarrow(narrow)) {
+      return allUsersAndBots.find(u => u.email === narrow[0].operand) !== undefined;
+    }
+
+    return true;
+  });

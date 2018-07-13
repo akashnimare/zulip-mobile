@@ -3,7 +3,7 @@ import type { FlagsState, Recipient, Narrow, Message, MuteState, Subscription } 
 import { homeNarrow, isTopicNarrow } from './narrow';
 
 // TODO types: this union is confusing
-export const normalizeRecipients = (recipients: { email: string }[] | string) =>
+export const normalizeRecipients = (recipients: Recipient[] | string) =>
   !Array.isArray(recipients)
     ? recipients
     : recipients
@@ -12,7 +12,7 @@ export const normalizeRecipients = (recipients: { email: string }[] | string) =>
         .sort()
         .join(',');
 
-export const normalizeRecipientsSansMe = (recipients: { email: string }[], ownEmail: string) =>
+export const normalizeRecipientsSansMe = (recipients: Recipient[], ownEmail: string) =>
   recipients.length === 1
     ? recipients[0].email
     : normalizeRecipients(recipients.filter(r => r.email !== ownEmail));
@@ -37,13 +37,13 @@ export const isSameRecipient = (message1: Message, message2: Message): boolean =
   switch (message1.type) {
     case 'private':
       return (
-        normalizeRecipients(message1.display_recipient).toLowerCase() ===
-        normalizeRecipients(message2.display_recipient).toLowerCase()
+        normalizeRecipients(message1.display_recipient).toLowerCase()
+        === normalizeRecipients(message2.display_recipient).toLowerCase()
       );
     case 'stream':
       return (
-        message1.display_recipient.toLowerCase() === message2.display_recipient.toLowerCase() &&
-        message1.subject.toLowerCase() === message2.subject.toLowerCase()
+        message1.display_recipient.toLowerCase() === message2.display_recipient.toLowerCase()
+        && message1.subject.toLowerCase() === message2.subject.toLowerCase()
       );
     case 'outbox': {
       return message2.isOutbox;
@@ -54,7 +54,7 @@ export const isSameRecipient = (message1: Message, message2: Message): boolean =
   }
 };
 
-export const isTopicMuted = (stream: string, topic: string, mute: string[] = []): boolean =>
+export const isTopicMuted = (stream: string, topic: string, mute: MuteState = []): boolean =>
   mute.some(x => x[0] === stream && x[1] === topic);
 
 export const shouldBeMuted = (

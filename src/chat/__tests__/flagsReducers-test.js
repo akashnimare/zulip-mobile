@@ -3,6 +3,7 @@ import deepFreeze from 'deep-freeze';
 import flagsReducers from '../flagsReducers';
 import { homeNarrowStr, allPrivateNarrowStr, streamNarrow } from '../../utils/narrow';
 import {
+  REHYDRATE,
   MESSAGE_FETCH_COMPLETE,
   EVENT_NEW_MESSAGE,
   EVENT_UPDATE_MESSAGE_FLAGS,
@@ -12,6 +13,55 @@ import {
 import { NULL_OBJECT } from '../../nullObjects';
 
 describe('flagsReducers', () => {
+  describe('REHYDRATE', () => {
+    test('handles no input data', () => {
+      const initialState = NULL_OBJECT;
+
+      const action = deepFreeze({
+        type: REHYDRATE,
+        payload: {},
+      });
+
+      const expectedState = {};
+
+      const actualState = flagsReducers(initialState, action);
+
+      expect(actualState).toEqual(expectedState);
+    });
+
+    test('flags from all messages are extracted and stored by id', () => {
+      const initialState = NULL_OBJECT;
+
+      const action = deepFreeze({
+        type: REHYDRATE,
+        payload: {
+          messages: [
+            { id: 1 },
+            { id: 2, flags: [] },
+            { id: 3, flags: ['read'] },
+            { id: 4, flags: ['starred'] },
+            { id: 5, flags: ['read', 'starred'] },
+          ],
+        },
+      });
+
+      const expectedState = {
+        read: {
+          3: true,
+          5: true,
+        },
+        starred: {
+          4: true,
+          5: true,
+        },
+      };
+
+      const actualState = flagsReducers(initialState, action);
+
+      expect(actualState).toEqual(expectedState);
+    });
+  });
+
   describe('MESSAGE_FETCH_COMPLETE', () => {
     test('flags from all messages are extracted and stored by id', () => {
       const initialState = NULL_OBJECT;

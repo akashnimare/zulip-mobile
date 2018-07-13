@@ -1,7 +1,7 @@
 /* @flow */
-import type { ReactionType } from '../types';
+import type { EventReaction, AggregatedReaction } from '../types';
 
-export default (reactions: ReactionType[], ownEmail: string): ReactionType[] =>
+export default (reactions: EventReaction[], ownEmail: string): AggregatedReaction[] =>
   Array.from(
     reactions
       .reduce((reactionMap, x) => {
@@ -11,6 +11,7 @@ export default (reactions: ReactionType[], ownEmail: string): ReactionType[] =>
             count: 1,
             name: x.emoji_name,
             type: x.reaction_type,
+            selfReacted: false,
           });
         } else {
           const prevReaction = reactionMap.get(x.emoji_name);

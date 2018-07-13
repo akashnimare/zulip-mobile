@@ -1,25 +1,36 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { SectionList } from 'react-native';
 
-import type { Actions, UnreadStream } from '../types';
+import type { Context, Dispatch, PmConversationData, PresenceState, UnreadStream } from '../types';
 import { LoadingIndicator, SearchEmptyState } from '../common';
-import ConversationList from '../conversations/ConversationList';
+import PmConversationList from '../pm-conversations/PmConversationList';
 import StreamItem from '../streams/StreamItem';
 import TopicItem from '../streams/TopicItem';
 import { streamNarrow, topicNarrow } from '../utils/narrow';
+import {
+  getLoading,
+  getPresence,
+  getUnreadConversations,
+  getAllUsersAndBotsByEmail,
+  getUnreadStreamsAndTopicsSansMuted,
+} from '../selectors';
+import { doNarrow } from '../actions';
 
 type Props = {
-  actions: Actions,
-  conversations: Object[],
+  conversations: PmConversationData[],
+  dispatch: Dispatch,
   isLoading: boolean,
-  presences: Object,
+  presences: PresenceState,
   usersByEmail: Object,
   unreadStreamsAndTopics: UnreadStream[],
   unreadStreamsAndTopics: any,
 };
 
-export default class UnreadCards extends PureComponent<Props> {
+class UnreadCards extends PureComponent<Props> {
+  context: Context;
   props: Props;
 
   static contextTypes = {
@@ -27,11 +38,11 @@ export default class UnreadCards extends PureComponent<Props> {
   };
 
   handleStreamPress = (stream: string) => {
-    this.props.actions.doNarrow(streamNarrow(stream));
+    this.props.dispatch(doNarrow(streamNarrow(stream)));
   };
 
   handleTopicPress = (stream: string, topic: string) => {
-    this.props.actions.doNarrow(topicNarrow(stream, topic));
+    this.props.dispatch(doNarrow(topicNarrow(stream, topic)));
   };
 
   render() {
@@ -45,7 +56,7 @@ export default class UnreadCards extends PureComponent<Props> {
       ...unreadStreamsAndTopics,
     ];
 
-    if (conversations.length === 0 && unreadStreamsAndTopics.length === 0) {
+    if (unreadStreamsAndTopics.length === 0) {
       return isLoading ? (
         <LoadingIndicator size={40} />
       ) : (
@@ -58,15 +69,15 @@ export default class UnreadCards extends PureComponent<Props> {
         stickySectionHeadersEnabled
         initialNumToRender={20}
         sections={unreadCards}
+        keyExtractor={item => item.key}
         renderSectionHeader={({ section }) =>
-          section.key === 'private' || section.isMuted ? null : (
+          section.key === 'private' ? null : (
             <StreamItem
-              style={styles.groupHeader}
+              style={styles.listItem}
               name={section.streamName}
               iconSize={16}
               isMuted={section.isMuted}
               isPrivate={section.isPrivate}
-              color={section.color}
               backgroundColor={section.color}
               unreadCount={section.unread}
               onPress={this.handleStreamPress}
@@ -75,8 +86,8 @@ export default class UnreadCards extends PureComponent<Props> {
         }
         renderItem={({ item, section }) =>
           section.key === 'private' ? (
-            <ConversationList {...item} />
-          ) : section.isMuted || item.isMuted ? null : (
+            <PmConversationList {...item} />
+          ) : (
             <TopicItem
               name={item.topic}
               stream={section.streamName || ''}
@@ -91,3 +102,11 @@ export default class UnreadCards extends PureComponent<Props> {
     );
   }
 }
+
+export default connect(state => ({
+  isLoading: getLoading(state).unread,
+  conversations: getUnreadConversations(state),
+  presences: getPresence(state),
+  usersByEmail: getAllUsersAndBotsByEmail(state),
+  unreadStreamsAndTopics: getUnreadStreamsAndTopicsSansMuted(state),
+}))(UnreadCards);

@@ -1,17 +1,18 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { FlatList } from 'react-native';
 
-import connectWithActions from '../connectWithActions';
 import { Popup } from '../common';
 import EmojiRow from '../emoji/EmojiRow';
 import getFilteredEmojiList from '../emoji/getFilteredEmojiList';
-import type { GlobalState, RealmEmojiType } from '../types';
+import type { GlobalState, RealmEmojiState } from '../types';
 import { getActiveRealmEmoji } from '../selectors';
 
 type Props = {
   filter: string,
-  realmEmoji: RealmEmojiType,
+  realmEmoji: RealmEmojiState,
   onAutocomplete: (name: string) => void,
 };
 
@@ -22,7 +23,9 @@ class EmojiAutocomplete extends PureComponent<Props> {
     const { filter, realmEmoji, onAutocomplete } = this.props;
     const emojis = getFilteredEmojiList(filter, realmEmoji);
 
-    if (emojis.length === 0) return null;
+    if (emojis.length === 0) {
+      return null;
+    }
 
     return (
       <Popup>
@@ -44,6 +47,6 @@ class EmojiAutocomplete extends PureComponent<Props> {
   }
 }
 
-export default connectWithActions((state: GlobalState) => ({
+export default connect((state: GlobalState) => ({
   realmEmoji: getActiveRealmEmoji(state),
 }))(EmojiAutocomplete);

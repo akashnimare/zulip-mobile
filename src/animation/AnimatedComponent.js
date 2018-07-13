@@ -3,11 +3,11 @@ import React, { PureComponent } from 'react';
 import type { ChildrenArray } from 'react';
 import { Animated, Easing } from 'react-native';
 
-import type { StyleObj } from '../types';
+import type { Style } from '../types';
 
 type Props = {
   children: ChildrenArray<*>,
-  style?: StyleObj,
+  style?: Style,
   visible: boolean,
   property: string,
   useNativeDriver: boolean,
@@ -23,12 +23,12 @@ export default class AnimatedComponent extends PureComponent<Props> {
 
   animatedValue = new Animated.Value(0);
 
-  componentWillReceiveProps(nextProps: Props) {
+  componentDidUpdate() {
     Animated.timing(this.animatedValue, {
-      toValue: nextProps.visible ? nextProps[nextProps.property] : 0,
+      toValue: this.props.visible ? this.props[this.props.property] : 0,
       duration: 300,
-      useNativeDriver: nextProps.useNativeDriver,
-      easing: nextProps.visible ? Easing.elastic() : Easing.back(2),
+      useNativeDriver: this.props.useNativeDriver,
+      easing: Easing.out(Easing.poly(4)),
     }).start();
   }
 

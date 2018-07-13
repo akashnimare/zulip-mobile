@@ -1,25 +1,25 @@
 /* @flow */
 import React, { PureComponent } from 'react';
-import { StyleSheet, Text } from 'react-native';
-import { CONTROL_SIZE } from '../styles';
+import { Text } from 'react-native';
 
-const styles = StyleSheet.create({
-  title: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 16,
-    paddingRight: CONTROL_SIZE,
-  },
-});
+import type { Context } from '../types';
 
 type Props = {
   text: string,
   color: string,
 };
 
-export default class TitlePrivate extends PureComponent<Props> {
+export default class TitlePlain extends PureComponent<Props> {
+  context: Context;
+  props: Props;
+
+  static contextTypes = {
+    styles: () => null,
+  };
+
   render() {
+    const { styles } = this.context;
     const { text, color } = this.props;
-    return <Text style={[styles.title, { color }]}>{text}</Text>;
+    return <Text style={[styles.navTitle, styles.flexed, { color }]}>{text}</Text>;
   }
 }

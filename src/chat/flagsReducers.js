@@ -2,12 +2,15 @@
 import type {
   FlagsAction,
   FlagsState,
+  Message,
+  RehydrateAction,
   MessageFetchCompleteAction,
   EventNewMessageAction,
   EventUpdateMessageFlagsAction,
   MarkMessagesReadAction,
 } from '../types';
 import {
+  REHYDRATE,
   APP_REFRESH,
   MESSAGE_FETCH_COMPLETE,
   EVENT_NEW_MESSAGE,
@@ -68,13 +71,10 @@ const removeFlagForMessages = (state: FlagsState, messages: number[], flag: stri
   };
 };
 
-const messageFetchComplete = (
-  state: FlagsState,
-  action: MessageFetchCompleteAction,
-): FlagsState => {
+const processFlagsForMessages = (state: FlagsState, messages: Message[]): FlagsState => {
   let stateChanged = false;
   const newState = {};
-  action.messages.forEach(msg => {
+  messages.forEach(msg => {
     (msg.flags || []).forEach(flag => {
       if (!state[flag] || !state[flag][msg.id]) {
         if (!newState[flag]) {
@@ -88,6 +88,16 @@ const messageFetchComplete = (
 
   return stateChanged ? deeperMerge(state, newState) : state;
 };
+
+const rehydrate = (state: FlagsState, action: RehydrateAction): FlagsState => {
+  // $FlowFixMe
+  const arrayOfMessageArrays: Array<Message[]> = Object.values(action.payload.messages || {});
+  const flattenedMessages: Message[] = Array.prototype.concat(...arrayOfMessageArrays);
+  return processFlagsForMessages(state, flattenedMessages);
+};
+
+const messageFetchComplete = (state: FlagsState, action: MessageFetchCompleteAction): FlagsState =>
+  processFlagsForMessages(state, action.messages);
 
 const eventNewMessage = (state: FlagsState, action: EventNewMessageAction): FlagsState =>
   addFlagsForMessages(state, [action.message.id], action.message.flags);
@@ -117,6 +127,9 @@ const markMessagesRead = (state: FlagsState, action: MarkMessagesReadAction): Fl
 
 export default (state: FlagsState = initialState, action: FlagsAction): FlagsState => {
   switch (action.type) {
+    case REHYDRATE:
+      return rehydrate(state, action);
+
     case APP_REFRESH:
     case ACCOUNT_SWITCH:
       return initialState;

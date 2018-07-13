@@ -1,28 +1,17 @@
 /* @flow */
 import React, { PureComponent } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import type { Actions } from '../types';
 import { Input, Label, OptionRow, ZulipButton } from '../common';
 
-const styles = StyleSheet.create({
-  marginBottom: {
-    marginBottom: 10,
-  },
-  marginTop: {
-    marginTop: 10,
-  },
-});
-
 type Props = {
-  actions: Actions,
-  ownEmail: string,
+  isNewStream: boolean,
   initialValues: {
     name: string,
     description: string,
     invite_only: boolean,
   },
-  streamId: number,
+  onComplete: (name: string, description: string, isPrivate: boolean) => void,
 };
 
 type State = {
@@ -35,6 +24,10 @@ export default class EditStreamCard extends PureComponent<Props, State> {
   props: Props;
   state: State;
 
+  static contextTypes = {
+    styles: () => null,
+  };
+
   state = {
     name: this.props.initialValues.name,
     description: this.props.initialValues.description,
@@ -42,15 +35,9 @@ export default class EditStreamCard extends PureComponent<Props, State> {
   };
 
   handlePerformAction = () => {
-    const { actions, ownEmail, streamId, initialValues } = this.props;
+    const { onComplete } = this.props;
     const { name, description, isPrivate } = this.state;
-
-    if (streamId === -1) {
-      actions.createNewStream(name, description, [ownEmail], isPrivate);
-    } else {
-      actions.updateExistingStream(streamId, initialValues, { name, description, isPrivate });
-    }
-    actions.navigateBack();
+    onComplete(name, description, isPrivate);
   };
 
   handleNameChange = (name: string) => {
@@ -66,8 +53,9 @@ export default class EditStreamCard extends PureComponent<Props, State> {
   };
 
   render() {
-    const { initialValues, streamId } = this.props;
+    const { initialValues, isNewStream } = this.props;
     const { name } = this.state;
+    const { styles } = this.context;
 
     return (
       <View>
@@ -93,7 +81,7 @@ export default class EditStreamCard extends PureComponent<Props, State> {
         />
         <ZulipButton
           style={styles.marginTop}
-          text={streamId === -1 ? 'Create' : 'Update'}
+          text={isNewStream ? 'Create' : 'Update'}
           disabled={name.length === 0}
           onPress={this.handlePerformAction}
         />

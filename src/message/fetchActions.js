@@ -34,11 +34,15 @@ import timing from '../utils/timing';
 import { allPrivateNarrow } from '../utils/narrow';
 import { tryUntilSuccessful } from '../utils/async';
 import { refreshNotificationToken } from '../utils/notifications';
-import { initStreams } from '../streams/streamsActions';
-import { sendFocusPing } from '../users/usersActions';
-import { initNotifications, realmInit } from '../realm/realmActions';
-import { addToOutbox, trySendMessages } from '../outbox/outboxActions';
-import { startEventPolling } from '../events/eventActions';
+import {
+  addToOutbox,
+  initNotifications,
+  initStreams,
+  realmInit,
+  sendFocusPing,
+  startEventPolling,
+  trySendMessages,
+} from '../actions';
 
 export const messageFetchStart = (
   narrow: Narrow,
@@ -66,13 +70,14 @@ export const messageFetchComplete = (
   numAfter,
 });
 
-export const backgroundFetchMessages = (
+export const fetchMessages = (
   narrow: Narrow,
   anchor: number,
   numBefore: number,
   numAfter: number,
   useFirstUnread: boolean = false,
-) => async (dispatch: Dispatch, getState: GetState) => {
+): FetchMessagesAction => async (dispatch: Dispatch, getState: GetState) => {
+  dispatch(messageFetchStart(narrow, numBefore, numAfter));
   const messages = await getMessages(
     getAuth(getState()),
     narrow,
@@ -81,19 +86,7 @@ export const backgroundFetchMessages = (
     numAfter,
     useFirstUnread,
   );
-
   dispatch(messageFetchComplete(messages, narrow, anchor, numBefore, numAfter));
-};
-
-export const fetchMessages = (
-  narrow: Narrow,
-  anchor: number,
-  numBefore: number,
-  numAfter: number,
-  useFirstUnread: boolean = false,
-): FetchMessagesAction => async (dispatch: Dispatch) => {
-  dispatch(messageFetchStart(narrow, numBefore, numAfter));
-  dispatch(backgroundFetchMessages(narrow, anchor, numBefore, numAfter, useFirstUnread));
 };
 
 export const fetchMessagesAroundAnchor = (narrow: Narrow, anchor: number): FetchMessagesAction =>
@@ -160,10 +153,13 @@ export const fetchEssentialInitialData = () => async (dispatch: Dispatch, getSta
   // only fetch messages if chat scrren is at the top of stack
   // get narrow of top most chat screen in the stack
   const narrow = getTopMostNarrow(getState());
+  if (narrow) {
+    dispatch(messageFetchStart(narrow, halfCount, halfCount));
+  }
   const [initData, messages] = await Promise.all([
     await tryUntilSuccessful(() => registerForEvents(auth)),
-    narrow &&
-      (await tryUntilSuccessful(() => getMessages(auth, narrow, 0, halfCount, halfCount, true))),
+    narrow
+      && (await tryUntilSuccessful(() => getMessages(auth, narrow, 0, halfCount, halfCount, true))),
   ]);
 
   timing.end('Essential server data');

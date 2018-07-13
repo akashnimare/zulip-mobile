@@ -1,9 +1,10 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import type { Auth, Stream } from '../types';
-import connectWithActions from '../connectWithActions';
 import { subscriptionAdd } from '../api';
 import { ZulipButton, Label } from '../common';
 import { getAuth, getStreamInNarrow } from '../selectors';
@@ -14,17 +15,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
     backgroundColor: 'gray',
-    paddingLeft: 16,
-    paddingTop: 8,
-    paddingRight: 16,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   text: {
     flex: 1,
     color: 'white',
   },
   button: {
-    padding: 10,
+    padding: 12,
   },
 });
 
@@ -55,7 +54,7 @@ class NotSubscribed extends PureComponent<Props> {
   }
 }
 
-export default connectWithActions((state, props) => ({
+export default connect((state, props) => ({
   auth: getAuth(state),
   stream: getStreamInNarrow(props.narrow)(state),
 }))(NotSubscribed);

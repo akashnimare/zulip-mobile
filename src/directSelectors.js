@@ -6,11 +6,12 @@ import type {
   FetchingState,
   FlagsState,
   LoadingState,
-  MessageState,
+  MessagesState,
   MuteState,
   NavigationState,
   TopicsState,
   PresenceState,
+  RealmBot,
   RealmEmojiState,
   RealmState,
   SettingsState,
@@ -25,6 +26,7 @@ import type {
   Stream,
   Outbox,
   User,
+  UserGroup,
 } from './types';
 
 export const getAccounts = (state: GlobalState): Account[] => state.accounts;
@@ -36,6 +38,8 @@ export const getIsOnline = (state: GlobalState): boolean => state.session.isOnli
 export const getDebug = (state: GlobalState): Debug => state.session.debug;
 export const getIsHydrated = (state: GlobalState): boolean => state.session.isHydrated;
 
+export const getCanCreateStreams = (state: GlobalState): boolean => state.realm.canCreateStreams;
+
 export const getDrafts = (state: GlobalState): DraftState => state.drafts;
 
 export const getLoading = (state: GlobalState): LoadingState => state.loading;
@@ -46,6 +50,8 @@ export const getTyping = (state: GlobalState): TypingState => state.typing;
 
 export const getTopics = (state: GlobalState): TopicsState => state.topics;
 
+export const getUserGroups = (state: GlobalState): UserGroup[] => state.userGroups;
+
 export const getUsers = (state: GlobalState): User[] => state.users;
 
 export const getFetching = (state: GlobalState): FetchingState => state.fetching;
@@ -54,7 +60,7 @@ export const getFlags = (state: GlobalState): FlagsState => state.flags;
 
 export const getReadFlags = (state: GlobalState): Object => state.flags.read;
 
-export const getAllMessages = (state: GlobalState): MessageState => state.messages;
+export const getAllMessages = (state: GlobalState): MessagesState => state.messages;
 
 export const getNav = (state: GlobalState): NavigationState => state.nav;
 
@@ -78,8 +84,14 @@ export const getUnreadMentions = (state: GlobalState): UnreadMentionsState => st
 
 export const getRealm = (state: GlobalState): RealmState => state.realm;
 
+export const getCrossRealmBots = (state: GlobalState): RealmBot[] => state.realm.crossRealmBots;
+
 export const getRealmEmoji = (state: GlobalState): RealmEmojiState => state.realm.emoji;
+
+export const getNonActiveUsers = (state: GlobalState): User[] => state.realm.nonActiveUsers;
 
 export const getNavigationRoutes = (state: GlobalState): Object[] => state.nav.routes;
 
 export const getNavigationIndex = (state: GlobalState): number => state.nav.index;
+
+export const getIsAdmin = (state: GlobalState): boolean => state.realm.isAdmin;

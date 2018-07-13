@@ -2,9 +2,9 @@
 import React, { PureComponent } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 
-import type { TopicDetails } from '../types';
+import type { TopicExtended } from '../types';
 import TopicItem from '../streams/TopicItem';
-import { LoadingIndicator, SectionSeparatorBetween, SearchEmptyState } from '../common';
+import { LoadingIndicator, SearchEmptyState } from '../common';
 
 const styles = StyleSheet.create({
   list: {
@@ -14,7 +14,7 @@ const styles = StyleSheet.create({
 });
 
 type Props = {
-  topics: ?(TopicDetails[]),
+  topics: ?(TopicExtended[]),
   onPress: (stream: string, topic: string) => void,
 };
 
@@ -41,13 +41,18 @@ export default class TopicList extends PureComponent<Props> {
 
     return (
       <FlatList
+        keyboardShouldPersistTaps="always"
         style={styles.list}
         data={topics}
         keyExtractor={item => item.name}
         renderItem={({ item }) => (
-          <TopicItem name={item.name} isMuted={false} unreadCount={0} onPress={onPress} />
+          <TopicItem
+            name={item.name}
+            isMuted={item.isMuted}
+            unreadCount={item.unreadCount}
+            onPress={onPress}
+          />
         )}
-        SectionSeparatorComponent={SectionSeparatorBetween}
       />
     );
   }

@@ -16,6 +16,7 @@ import {
   hasProtocol,
   fixRealmUrl,
   autocompleteUrl,
+  appendAuthToImages,
 } from '../url';
 
 import { streamNarrow, topicNarrow } from '../narrow';
@@ -269,9 +270,9 @@ describe('getEmojiUrl', () => {
 
 describe('getNarrowFromLink', () => {
   const users = [
-    { email: 'abc@example.com', id: 1 },
-    { email: 'xyz@example.com', id: 2 },
-    { email: 'def@example.com', id: 3 },
+    { email: 'abc@example.com', user_id: 1 },
+    { email: 'xyz@example.com', user_id: 2 },
+    { email: 'def@example.com', user_id: 3 },
   ];
 
   test('when link is not in-app link, return default homeNarrow', () => {
@@ -490,27 +491,101 @@ describe('fixRealmUrl', () => {
 
 describe('autocompleteUrl', () => {
   test('when no value is entered return empty string', () => {
-    const result = autocompleteUrl('', 'https://', '.zulipchat.com', '');
+    const result = autocompleteUrl('', 'https://', '.zulipchat.com');
     expect(result).toEqual('');
   });
 
   test('when an protocol is provided use it', () => {
-    const result = autocompleteUrl('http://example', 'https://', '.zulipchat.com', '');
+    const result = autocompleteUrl('http://example', 'https://', '.zulipchat.com');
     expect(result).toEqual('http://example.zulipchat.com');
   });
 
   test('do not use any other protocol than http and https', () => {
-    const result = autocompleteUrl('ftp://example', 'https://', '.zulipchat.com', '');
+    const result = autocompleteUrl('ftp://example', 'https://', '.zulipchat.com');
     expect(result).toEqual('https://ftp://example.zulipchat.com');
   });
 
-  test('if one dot in the input use the short append instead', () => {
-    const result = autocompleteUrl('subdomain.mydomain', 'https://', '.zulipchat.com', '.com');
-    expect(result).toEqual('https://subdomain.mydomain.com');
+  test('if more than one dots in input do not use any append', () => {
+    const result = autocompleteUrl('subdomain.mydomain.org', 'https://', '.zulipchat.com');
+    expect(result).toEqual('https://subdomain.mydomain.org');
   });
 
-  test('if more than one dots in input do not use any append', () => {
-    const result = autocompleteUrl('subdomain.mydomain.org', 'https://', '.zulipchat.com', '.com');
-    expect(result).toEqual('https://subdomain.mydomain.org');
+  test('when no subdomain entered do not append top-level domain', () => {
+    const result = autocompleteUrl('mydomain.org', 'https://', '.zulipchat.com');
+    expect(result).toEqual('https://mydomain.org');
+  });
+});
+
+describe('appendAuthToImages', () => {
+  const auth = {
+    realm: 'https://realm.zulip.com',
+    apiKey: 'some_key',
+    email: 'me@example.com',
+  };
+
+  test('empty string is unchanged', () => {
+    const input = '';
+    const expected = input;
+    expect(appendAuthToImages(input, auth)).toEqual(expected);
+  });
+
+  test('appends the api key to a relative image src url', () => {
+    const input = '<img src="/user_uploads/img.png" />';
+    const expected = '<img src="/user_uploads/img.png?api_key=some_key" />';
+    expect(appendAuthToImages(input, auth)).toEqual(expected);
+  });
+
+  test('appends the api key to an absolute image src if in the same realm', () => {
+    const input = '<img src="https://realm.zulip.com/user_uploads/img.png" />';
+    const expected = '<img src="https://realm.zulip.com/user_uploads/img.png?api_key=some_key" />';
+    expect(appendAuthToImages(input, auth)).toEqual(expected);
+  });
+
+  // The server generates these if the user contains a literal URL pointing to
+  // an uploaded image on the server: e.g. markdown of
+  //   https://realm.zulip.com/user_uploads/1/2/3/foo.png
+  // is rendered as an image element
+  //   <img src="user_uploads/1/2/3/foo.png">
+  test('appends the api key to a path-relative url', () => {
+    const input = '<img src="user_uploads/img.png" />';
+    const expected = '<img src="user_uploads/img.png?api_key=some_key" />';
+    expect(appendAuthToImages(input, auth)).toEqual(expected);
+  });
+
+  test('does not rewrite non-user_uploads urls', () => {
+    const input = '<img src="https://realm.zulip.com/other/img.png">';
+    const expected = input;
+    expect(appendAuthToImages(input, auth)).toEqual(expected);
+  });
+
+  test('does not append anything to images pointing to different domains', () => {
+    const input = '<img src="https://example.com/user_uploads/img.png" />';
+    const expected = input;
+    expect(appendAuthToImages(input, auth)).toEqual(expected);
+  });
+
+  test('does not mistreat the realm name as a regex', () => {
+    const input = '<img src="https://realm-zulip.com/user_uploads/img.png">';
+    const expected = input;
+    expect(appendAuthToImages(input, auth)).toEqual(expected);
+  });
+
+  test('does not replace urls not in images', () => {
+    const input = '<a href="/user_uploads/img.png" />';
+    const expected = input;
+    expect(appendAuthToImages(input, auth)).toEqual(expected);
+  });
+
+  test('replaces urls in images in the whole string', () => {
+    const input = '<img src="/user_uploads/img.png" /><img src="/user_uploads/img.png" />';
+    const expected =
+      '<img src="/user_uploads/img.png?api_key=some_key" /><img src="/user_uploads/img.png?api_key=some_key" />';
+    expect(appendAuthToImages(input, auth)).toEqual(expected);
+  });
+
+  test('does not overrun', () => {
+    const input = '<img src="/user_uploads/img.png">"But soft,"';
+    const expected = '<img src="/user_uploads/img.png?api_key=some_key">"But soft,"';
+    expect(appendAuthToImages(input, auth)).toEqual(expected);
   });
 });

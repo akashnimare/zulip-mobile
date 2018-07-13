@@ -1,7 +1,8 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 
-import connectWithActions from '../connectWithActions';
 import {
   isHomeNarrow,
   isPrivateNarrow,
@@ -14,10 +15,10 @@ import { getSession } from '../selectors';
 
 import type { Message, Narrow } from '../types';
 import TitleHome from './TitleHome';
-import TitlePrivate from './TitlePrivateContainer';
-import TitleGroup from './TitleGroupContainer';
-import TitleSpecial from './TitleSpecialContainer';
-import TitleStream from './TitleStreamContainer';
+import TitlePrivate from './TitlePrivate';
+import TitleGroup from './TitleGroup';
+import TitleSpecial from './TitleSpecial';
+import TitleStream from './TitleStream';
 import TitlePlain from './TitlePlain';
 
 const titles = [
@@ -47,12 +48,14 @@ class Title extends PureComponent<Props> {
 
     const titleType = narrow && titles.find(x => x.isFunc(narrow));
 
-    if (!titleType) return null;
+    if (!titleType) {
+      return null;
+    }
 
     return <titleType.component color={color} narrow={narrow} />;
   }
 }
 
-export default connectWithActions(state => ({
+export default connect(state => ({
   editMessage: getSession(state).editMessage,
 }))(Title);

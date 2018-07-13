@@ -14,9 +14,11 @@ import { filterArray } from '../utils/immutability';
 const initialState = NULL_ARRAY;
 
 const messageSendStart = (state: OutboxState, action: MessageSendStartAction): OutboxState => {
-  const message = state.find(item => item.timestamp === action.params.timestamp);
-  if (message) return state;
-  return [...state, { ...action.params }];
+  const message = state.find(item => item.timestamp === action.outbox.timestamp);
+  if (message) {
+    return state;
+  }
+  return [...state, { ...action.outbox }];
 };
 
 const messageSendComplete = (state: OutboxState, action: { localMessageId: number }): OutboxState =>

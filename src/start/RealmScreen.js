@@ -1,15 +1,17 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { ScrollView, Keyboard } from 'react-native';
 
-import type { Actions } from '../types';
-import connectWithActions from '../connectWithActions';
+import type { ApiServerSettings, Context, Dispatch } from '../types';
 import { ErrorMsg, Label, SmartUrlInput, Screen, ZulipButton } from '../common';
 import { isValidUrl } from '../utils/url';
 import { getServerSettings } from '../api';
+import { realmAdd, navigateToAuth } from '../actions';
 
 type Props = {
-  actions: Actions,
+  dispatch: Dispatch,
   navigation: Object,
   initialRealm: string,
 };
@@ -21,6 +23,7 @@ type State = {
 };
 
 class RealmScreen extends PureComponent<Props, State> {
+  context: Context;
   props: Props;
   state: State;
   scrollView: ScrollView;
@@ -44,12 +47,12 @@ class RealmScreen extends PureComponent<Props, State> {
       error: undefined,
     });
 
-    const { actions } = this.props;
+    const { dispatch } = this.props;
 
     try {
-      const serverSettings = await getServerSettings(realm);
-      actions.realmAdd(realm);
-      actions.navigateToAuth(serverSettings);
+      const serverSettings: ApiServerSettings = await getServerSettings(realm);
+      dispatch(realmAdd(realm));
+      dispatch(navigateToAuth(serverSettings));
       Keyboard.dismiss();
     } catch (err) {
       this.setState({ error: 'Cannot connect to server' });
@@ -76,12 +79,11 @@ class RealmScreen extends PureComponent<Props, State> {
       <Screen title="Welcome" padding centerContent keyboardShouldPersistTaps="always">
         <Label text="Organization URL" />
         <SmartUrlInput
-          style={styles.marginTopBottom}
+          style={styles.marginVertical}
           navigation={navigation}
           defaultOrganization="your-org"
           protocol="https://"
           append=".zulipchat.com"
-          shortAppend=".com"
           defaultValue={initialRealm}
           onChange={this.handleRealmChange}
           onSubmitEditing={this.tryRealm}
@@ -89,7 +91,7 @@ class RealmScreen extends PureComponent<Props, State> {
         />
         {error && <ErrorMsg error={error} />}
         <ZulipButton
-          style={styles.smallMarginTop}
+          style={styles.halfMarginTop}
           text="Enter"
           progress={progress}
           onPress={this.tryRealm}
@@ -100,8 +102,8 @@ class RealmScreen extends PureComponent<Props, State> {
   }
 }
 
-export default connectWithActions((state, props) => ({
+export default connect((state, props) => ({
   initialRealm:
-    (props.navigation && props.navigation.state.params && props.navigation.state.params.realm) ||
-    '',
+    (props.navigation && props.navigation.state.params && props.navigation.state.params.realm)
+    || '',
 }))(RealmScreen);

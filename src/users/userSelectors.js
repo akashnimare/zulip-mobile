@@ -2,38 +2,21 @@
 import { createSelector } from 'reselect';
 
 import { NULL_USER } from '../nullObjects';
-import { getPresence, getUsers } from '../directSelectors';
+import { getPresence, getUsers, getCrossRealmBots, getNonActiveUsers } from '../directSelectors';
 import { getAccountDetailsScreenParams } from '../baseSelectors';
 import { getOwnEmail } from '../account/accountSelectors';
 import { getUserByEmail } from './userHelpers';
-
-export const getAccountDetailsUser = createSelector(
-  [getUsers, getAccountDetailsScreenParams],
-  (allUsers, params) => {
-    if (!params.email) {
-      return NULL_USER;
-    }
-
-    return (
-      allUsers.find(x => x.email === params.email) || {
-        ...NULL_USER,
-        email: params.email,
-        fullName: params.email,
-      }
-    );
-  },
-);
 
 export const getSelfUserDetail = createSelector(getUsers, getOwnEmail, (users, ownEmail) =>
   getUserByEmail(users, ownEmail),
 );
 
 export const getActiveUsers = createSelector(getUsers, users =>
-  users.filter(user => user.isActive),
+  users.filter(user => user.is_active),
 );
 
 export const getSortedUsers = createSelector(getUsers, users =>
-  [...users].sort((x1, x2) => x1.fullName.toLowerCase().localeCompare(x2.fullName.toLowerCase())),
+  [...users].sort((x1, x2) => x1.full_name.toLowerCase().localeCompare(x2.full_name.toLowerCase())),
 );
 
 export const getUsersStatusActive = createSelector(getActiveUsers, getPresence, (users, presence) =>
@@ -53,20 +36,55 @@ export const getUsersStatusOffline = createSelector(
     ),
 );
 
-export const getUsersByEmail = createSelector(getUsers, users =>
-  users.reduce((usersByEmail, user) => {
+export const getActiveUsersAndBots = createSelector(
+  getUsers,
+  getCrossRealmBots,
+  (users = [], crossRealmBots = []) => [...users, ...crossRealmBots],
+);
+
+export const getAllUsersAndBots = createSelector(
+  getUsers,
+  getNonActiveUsers,
+  getCrossRealmBots,
+  (users = [], nonActiveUsers = [], crossRealmBots = []) => [
+    ...users,
+    ...nonActiveUsers,
+    ...crossRealmBots,
+  ],
+);
+
+export const getAllUsersAndBotsByEmail = createSelector(getAllUsersAndBots, allUsersAndBots =>
+  allUsersAndBots.reduce((usersByEmail, user) => {
     usersByEmail[user.email] = user;
     return usersByEmail;
   }, {}),
 );
 
-export const getUsersById = createSelector(getUsers, users =>
+export const getUsersById = createSelector(getUsers, (users = []) =>
   users.reduce((usersById, user) => {
-    usersById[user.id] = user;
+    usersById[user.user_id] = user;
     return usersById;
   }, {}),
 );
 
 export const getUsersSansMe = createSelector(getUsers, getOwnEmail, (users, ownEmail) =>
   users.filter(user => user.email !== ownEmail),
+);
+
+export const getAccountDetailsUser = createSelector(
+  getAllUsersAndBots,
+  getAccountDetailsScreenParams,
+  (allUsersAndBots, params) => {
+    if (!params.email) {
+      return NULL_USER;
+    }
+
+    return (
+      allUsersAndBots.find(x => x.email === params.email) || {
+        ...NULL_USER,
+        email: params.email,
+        full_name: params.email,
+      }
+    );
+  },
 );

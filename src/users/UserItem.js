@@ -2,17 +2,11 @@
 import React, { PureComponent } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import type { Presence } from '../types';
+import type { Context, Presence } from '../types';
 import { Avatar, RawLabel, Touchable, UnreadCount } from '../common';
 import { BRAND_COLOR } from '../styles';
 
-const styles = StyleSheet.create({
-  row: {
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-  },
+const componentStyles = StyleSheet.create({
   selectedRow: {
     backgroundColor: BRAND_COLOR,
   },
@@ -43,7 +37,12 @@ type Props = {
 };
 
 export default class UserItem extends PureComponent<Props> {
+  context: Context;
   props: Props;
+
+  static contextTypes = {
+    styles: () => null,
+  };
 
   handlePress = () => {
     const { email, onPress } = this.props;
@@ -53,11 +52,12 @@ export default class UserItem extends PureComponent<Props> {
   };
 
   render() {
+    const { styles } = this.context;
     const { fullName, avatarUrl, presence, isSelected, unreadCount, showEmail, email } = this.props;
 
     return (
       <Touchable onPress={this.handlePress}>
-        <View style={[styles.row, isSelected && styles.selectedRow]}>
+        <View style={[styles.listItem, isSelected && componentStyles.selectedRow]}>
           <Avatar
             size={32}
             avatarUrl={avatarUrl}
@@ -66,16 +66,20 @@ export default class UserItem extends PureComponent<Props> {
             presence={presence}
             onPress={this.handlePress}
           />
-          <View style={styles.textWrapper}>
+          <View style={componentStyles.textWrapper}>
             <RawLabel
-              style={[styles.text, isSelected && styles.selectedText]}
+              style={[componentStyles.text, isSelected && componentStyles.selectedText]}
               text={fullName}
               numberOfLines={1}
               ellipsizeMode="tail"
             />
             {showEmail && (
               <RawLabel
-                style={[styles.text, styles.textEmail, isSelected && styles.selectedText]}
+                style={[
+                  componentStyles.text,
+                  componentStyles.textEmail,
+                  isSelected && componentStyles.selectedText,
+                ]}
                 text={email}
                 numberOfLines={1}
                 ellipsizeMode="tail"

@@ -25,20 +25,21 @@ export const NULL_ACCOUNT: Account = {
 };
 
 export const NULL_USER: User = {
-  avatarUrl: '',
+  avatar_url: '',
   email: '',
-  fullName: '',
-  id: -1,
-  isActive: false,
-  isAdmin: false,
-  isBot: false,
+  full_name: '',
+  is_active: false,
+  is_admin: false,
+  is_bot: false,
+  timezone: '',
+  user_id: -1,
 };
 
 export const NULL_STREAM: Stream = {
   stream_id: 0,
   description: '',
   name: '',
-  invite_only: true,
+  invite_only: false,
   in_home_view: false,
   pin_to_top: false,
   color: 'green',
@@ -55,6 +56,7 @@ export const NULL_MESSAGE: Message = {
   gravatar_hash: '',
   id: -1,
   isOutbox: false,
+  is_me_message: false,
   reactions: [],
   recipient_id: -1,
   sender_domain: '',
@@ -62,8 +64,11 @@ export const NULL_MESSAGE: Message = {
   sender_full_name: '',
   sender_id: -1,
   sender_short_name: '',
+  sender_realm_str: '',
+  stream_id: -1,
   subject: '',
   subject_links: [],
+  submessages: [],
   timestamp: 0,
   type: 'stream',
 };
@@ -84,21 +89,14 @@ export const NULL_SUBSCRIPTION: Subscription = {
   is_old_stream: false,
 };
 
-export const NULL_PRESENCE: Presence = {
-  email: '',
-  age: 0,
-  pushable: false,
-  aggregated: {
-    status: 'offline',
-    timestamp: 0,
-    client: '',
-  },
-};
-
 export const NULL_PRESENCE_AGGREGATED: PresenceAggregated = {
   client: '',
   status: 'offline',
   timestamp: 0,
+};
+
+export const NULL_PRESENCE: Presence = {
+  aggregated: NULL_PRESENCE_AGGREGATED,
 };
 
 export const NULL_CAUGHTUP: CaughtUp = {

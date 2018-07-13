@@ -1,8 +1,9 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { View, StyleSheet } from 'react-native';
 
-import connectWithActions from '../connectWithActions';
 import { getSession } from '../selectors';
 import { Label } from '../common';
 
@@ -24,13 +25,21 @@ type Props = {
   isOnline: boolean,
 };
 
+/**
+ * Displays a notice that the app is working in offline mode.
+ * Not rendered if state is 'online'.
+ *
+ * @prop isOnline - Provide the online/offline state.
+ */
 class OfflineNotice extends PureComponent<Props> {
   props: Props;
 
   render() {
     const { isOnline } = this.props;
 
-    if (isOnline) return null;
+    if (isOnline) {
+      return null;
+    }
 
     return (
       <View style={styles.block}>
@@ -40,6 +49,6 @@ class OfflineNotice extends PureComponent<Props> {
   }
 }
 
-export default connectWithActions(state => ({
+export default connect(state => ({
   isOnline: getSession(state).isOnline,
 }))(OfflineNotice);

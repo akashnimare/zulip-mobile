@@ -1,38 +1,31 @@
 /* @flow */
 import React, { Component } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 // $FlowFixMe
 import ImagePicker from 'react-native-image-picker';
+import { connect } from 'react-redux';
 
-import type { Actions, Narrow } from '../types';
-import { BRAND_COLOR } from '../styles';
-import { Touchable } from '../common';
+import type { Context, Dispatch, Narrow } from '../types';
 import { showErrorAlert } from '../utils/info';
 import { IconPlus, IconLeft, IconPeople, IconImage, IconCamera } from '../common/Icons';
 import AnimatedComponent from '../animation/AnimatedComponent';
-
-const styles = StyleSheet.create({
-  wrapper: {
-    flexDirection: 'row',
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
-  },
-  touchable: {},
-  button: {
-    padding: 8,
-    color: BRAND_COLOR,
-  },
-});
+import { navigateToCreateGroup, uploadImage } from '../actions';
+import { getNarrowToSendTo } from '../selectors';
 
 type Props = {
-  actions: Actions,
+  dispatch: Dispatch,
   expanded: boolean,
   narrow: Narrow,
   onExpandContract: () => void,
 };
 
-export default class ComposeMenu extends Component<Props> {
+class ComposeMenu extends Component<Props> {
+  context: Context;
   props: Props;
+
+  static contextTypes = {
+    styles: () => null,
+  };
 
   handleImagePickerResponse = (response: Object) => {
     if (response.didCancel) {
@@ -44,9 +37,9 @@ export default class ComposeMenu extends Component<Props> {
       return;
     }
 
-    const { actions, narrow } = this.props;
+    const { dispatch, narrow } = this.props;
 
-    actions.uploadImage(narrow, response.uri, response.fileName);
+    dispatch(uploadImage(narrow, response.uri, response.fileName));
   };
 
   handleImageUpload = () => {
@@ -68,22 +61,36 @@ export default class ComposeMenu extends Component<Props> {
   };
 
   render() {
-    const { actions, expanded, onExpandContract } = this.props;
-
+    const { styles } = this.context;
+    const { dispatch, expanded, onExpandContract } = this.props;
     return (
-      <View style={styles.wrapper}>
-        <AnimatedComponent property="width" useNativeDriver={false} visible={expanded} width={124}>
-          <View style={styles.wrapper}>
-            <IconPeople style={styles.button} size={24} onPress={actions.navigateToCreateGroup} />
-            <IconImage style={styles.button} size={24} onPress={this.handleImageUpload} />
-            <IconCamera style={styles.button} size={24} onPress={this.handleCameraCapture} />
+      <View style={styles.composeMenu}>
+        <AnimatedComponent property="width" useNativeDriver={false} visible={expanded} width={120}>
+          <View style={styles.composeMenu}>
+            <IconPeople
+              style={styles.composeMenuButton}
+              size={24}
+              onPress={() => dispatch(navigateToCreateGroup())}
+            />
+            <IconImage
+              style={styles.composeMenuButton}
+              size={24}
+              onPress={this.handleImageUpload}
+            />
+            <IconCamera
+              style={styles.composeMenuButton}
+              size={24}
+              onPress={this.handleCameraCapture}
+            />
           </View>
         </AnimatedComponent>
-        <Touchable style={styles.touchable} onPress={onExpandContract}>
-          {!expanded && <IconPlus style={styles.button} size={24} />}
-          {expanded && <IconLeft style={styles.button} size={24} />}
-        </Touchable>
+        {!expanded && <IconPlus style={styles.expandButton} size={24} onPress={onExpandContract} />}
+        {expanded && <IconLeft style={styles.expandButton} size={24} onPress={onExpandContract} />}
       </View>
     );
   }
 }
+
+export default connect((state, props) => ({
+  narrow: getNarrowToSendTo(props.narrow)(state),
+}))(ComposeMenu);

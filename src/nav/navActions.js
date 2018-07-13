@@ -1,7 +1,7 @@
 /* @flow */
 import { NavigationActions } from 'react-navigation';
 
-import type { NavigateAction, GetState, Message, Narrow, ServerSettings } from '../types';
+import type { NavigateAction, GetState, Message, Narrow, ApiServerSettings } from '../types';
 import { getSameRoutesCount } from '../selectors';
 
 export const navigateBack = () => (dispatch: Dispatch, getState: GetState): NavigateAction =>
@@ -23,13 +23,13 @@ export const navigateToSearch = (): NavigateAction =>
 export const navigateToSettings = (): NavigateAction =>
   NavigationActions.navigate({ routeName: 'settings' });
 
-export const navigateToAuth = (serverSettings: ServerSettings): NavigateAction =>
+export const navigateToAuth = (serverSettings: ApiServerSettings): NavigateAction =>
   NavigationActions.navigate({ routeName: 'auth', params: { serverSettings } });
 
 export const navigateToDev = (): NavigateAction => NavigationActions.navigate({ routeName: 'dev' });
 
-export const navigateToPassword = (ldap: boolean = false): NavigateAction =>
-  NavigationActions.navigate({ routeName: 'password', params: { ldap } });
+export const navigateToPassword = (requireEmailFormat: boolean): NavigateAction =>
+  NavigationActions.navigate({ routeName: 'password', params: { requireEmailFormat } });
 
 export const navigateToAccountPicker = (): NavigateAction =>
   NavigationActions.navigate({ routeName: 'account' });
@@ -58,6 +58,12 @@ export const navigateToCreateGroup = (): NavigateAction =>
 export const navigateToDiagnostics = (): NavigateAction =>
   NavigationActions.navigate({ routeName: 'diagnostics' });
 
+export const navigateToWelcomeHelp = (): NavigateAction =>
+  NavigationActions.navigate({ routeName: 'welcome-help' });
+
+export const navigateToWelcomeScreen = (): NavigateAction =>
+  NavigationActions.navigate({ routeName: 'welcome' });
+
 export const navigateToVariables = (): NavigateAction =>
   NavigationActions.navigate({ routeName: 'variables' });
 
@@ -84,6 +90,9 @@ export const navigateToCreateStream = (): NavigateAction =>
 
 export const navigateToEditStream = (streamId: number): NavigateAction =>
   NavigationActions.navigate({ routeName: 'stream-edit', params: { streamId } });
+
+export const navigateToStreamSubscribers = (streamId: number): NavigateAction =>
+  NavigationActions.navigate({ routeName: 'invite-users', params: { streamId } });
 
 export const navigateToNotifications = (): NavigateAction =>
   NavigationActions.navigate({ routeName: 'notifications' });

@@ -2,7 +2,7 @@
 import React, { PureComponent } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 
-import type { LocalizableText } from '../types';
+import type { Context, LocalizableText } from '../types';
 import Input from './Input';
 import { BRAND_COLOR } from '../styles';
 import Icon from '../common/Icons';
@@ -31,16 +31,22 @@ type State = {
   text: string,
 };
 
+/**
+ * A component wrapping Input and providing an 'X' button
+ * to clear the entered text.
+ *
+ * @prop [placeholder] - Text to be shown when no value is entered.
+ * @prop onChangeText - Event called when text is edited.
+ */
 export default class InputWithClearButton extends PureComponent<Props, State> {
+  context: Context;
+  props: Props;
+  state: State;
+  textInput: TextInput;
+
   static contextTypes = {
     styles: () => null,
   };
-
-  textInput: TextInput;
-
-  props: Props;
-
-  state: State;
 
   state = {
     canBeCleared: false,

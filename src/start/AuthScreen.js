@@ -1,10 +1,12 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { Linking } from 'react-native';
 import parseURL from 'url-parse';
+import type { NavigationScreenProp } from 'react-navigation';
 
-import type { Actions } from '../types';
-import connectWithActions from '../connectWithActions';
+import type { Dispatch, ApiServerSettings } from '../types';
 import { Centerer, Screen } from '../common';
 import { getCurrentRealm } from '../selectors';
 import RealmInfo from './RealmInfo';
@@ -12,52 +14,20 @@ import AuthButton from './AuthButton';
 import { getFullUrl } from '../utils/url';
 import { extractApiKey } from '../utils/encoding';
 import { generateOtp, openBrowser, closeBrowser } from './oauth';
-import { IconPrivate, IconGoogle, IconGitHub, IconTerminal } from '../common/Icons';
+import { activeAuthentications } from './authentications';
+import { loginSuccess, navigateToDev, navigateToPassword } from '../actions';
 
 type Props = {
-  actions: Actions,
+  dispatch: Dispatch,
   realm: string,
-  navigation: Object,
+  navigation: NavigationScreenProp<*> & {
+    state: {
+      params: {
+        serverSettings: ApiServerSettings,
+      },
+    },
+  },
 };
-
-const authentications = [
-  {
-    method: 'dev',
-    name: 'dev account',
-    Icon: IconTerminal,
-    handler: 'handleDevAuth',
-  },
-  {
-    method: 'password',
-    name: 'password',
-    Icon: IconPrivate,
-    handler: 'handlePassword',
-  },
-  {
-    method: 'ldap',
-    name: 'password',
-    Icon: IconPrivate,
-    handler: 'handleLdap',
-  },
-  {
-    method: 'google',
-    name: 'Google',
-    Icon: IconGoogle,
-    handler: 'handleGoogle',
-  },
-  {
-    method: 'github',
-    name: 'GitHub',
-    Icon: IconGitHub,
-    handler: 'handleGitHub',
-  },
-  {
-    method: 'remoteuser',
-    name: 'SSO',
-    Icon: IconPrivate,
-    handler: 'handleSso',
-  },
-];
 
 let otp = '';
 
@@ -72,7 +42,9 @@ class AuthScreen extends PureComponent<Props> {
       }
     });
 
-    const authList = this.activeAuthentications();
+    const authList = activeAuthentications(
+      this.props.navigation.state.params.serverSettings.authentication_methods,
+    );
     if (authList.length === 1) {
       // $FlowFixMe
       this[authList[0].handler]();
@@ -91,37 +63,30 @@ class AuthScreen extends PureComponent<Props> {
   endOAuth = event => {
     closeBrowser();
 
-    const { actions, realm } = this.props;
+    const { dispatch, realm } = this.props;
     const url = parseURL(event.url, true);
 
     // callback format expected: zulip://login?realm={}&email={}&otp_encrypted_api_key={}
     if (
-      url.host === 'login' &&
-      url.query.realm === realm &&
-      otp &&
-      url.query.email &&
-      url.query.otp_encrypted_api_key &&
-      url.query.otp_encrypted_api_key.length === otp.length
+      url.host === 'login'
+      && url.query.realm === realm
+      && otp
+      && url.query.email
+      && url.query.otp_encrypted_api_key
+      && url.query.otp_encrypted_api_key.length === otp.length
     ) {
       const apiKey = extractApiKey(url.query.otp_encrypted_api_key, otp);
-      actions.loginSuccess(realm, url.query.email, apiKey);
+      dispatch(loginSuccess(realm, url.query.email, apiKey));
     }
   };
 
-  activeAuthentications = () =>
-    authentications.filter(
-      auth => this.props.navigation.state.params.serverSettings.authentication_methods[auth.method],
-    );
-
   handleDevAuth = () => {
-    this.props.actions.navigateToDev();
+    this.props.dispatch(navigateToDev());
   };
 
   handlePassword = () => {
-    this.props.actions.navigateToPassword();
-  };
-  handleLdap = () => {
-    this.props.actions.navigateToPassword(true);
+    const { serverSettings } = this.props.navigation.state.params;
+    this.props.dispatch(navigateToPassword(serverSettings.require_email_format_usernames));
   };
 
   handleGoogle = () => {
@@ -140,13 +105,13 @@ class AuthScreen extends PureComponent<Props> {
     const { serverSettings } = this.props.navigation.state.params;
 
     return (
-      <Screen title="Log in" padding>
+      <Screen title="Log in" centerContent padding>
         <Centerer>
           <RealmInfo
             name={serverSettings.realm_name}
             iconUrl={getFullUrl(serverSettings.realm_icon, this.props.realm)}
           />
-          {this.activeAuthentications().map(auth => (
+          {activeAuthentications(serverSettings.authentication_methods).map(auth => (
             <AuthButton
               key={auth.method}
               name={auth.name}
@@ -163,6 +128,6 @@ class AuthScreen extends PureComponent<Props> {
   }
 }
 
-export default connectWithActions(state => ({
+export default connect(state => ({
   realm: getCurrentRealm(state),
 }))(AuthScreen);

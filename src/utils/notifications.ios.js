@@ -2,16 +2,18 @@
 import NotificationsIOS from 'react-native-notifications';
 import { PushNotificationIOS } from 'react-native';
 
-import type { Auth, Actions } from '../types';
+import type { Auth, Dispatch, UserIdMap } from '../types';
 import config from '../config';
 import { registerPush } from '../api';
 import { logErrorRemotely } from './logging';
 import { getNarrowFromNotificationData } from './notificationsCommon';
+import type { SavePushTokenCallback } from './notificationsCommon';
+import { doNarrow } from '../actions';
 
 const onPushRegistered = async (
   auth: Auth,
   deviceToken: string,
-  saveTokenPush: any /* Actions.saveTokenPush */,
+  saveTokenPush: SavePushTokenCallback,
 ) => {
   const result = await registerPush(auth, deviceToken);
   saveTokenPush(deviceToken, result.msg, result.result);
@@ -25,10 +27,7 @@ export const removeNotificationListener = (notificationHandler: (notification: O
   NotificationsIOS.removeEventListener('notificationOpened', notificationHandler);
 };
 
-export const initializeNotifications = (
-  auth: Auth,
-  saveTokenPush: any /* Actions.saveTokenPush */,
-) => {
+export const initializeNotifications = (auth: Auth, saveTokenPush: SavePushTokenCallback) => {
   NotificationsIOS.addEventListener('remoteNotificationsRegistered', deviceToken =>
     onPushRegistered(auth, deviceToken, saveTokenPush),
   );
@@ -40,7 +39,11 @@ export const initializeNotifications = (
 
 export const refreshNotificationToken = () => {};
 
-export const handlePendingNotifications = (notificationData: Object, actions: Actions) => {
+export const handlePendingNotifications = (
+  notificationData: Object,
+  dispatch: Dispatch,
+  usersById: UserIdMap,
+) => {
   if (!notificationData || !notificationData.getData) {
     return;
   }
@@ -48,11 +51,11 @@ export const handlePendingNotifications = (notificationData: Object, actions: Ac
   const data = notificationData.getData();
   config.startup.notification = data.zulip;
   if (data && data.zulip) {
-    actions.doNarrow(getNarrowFromNotificationData(data)); // , data.message_ids
+    dispatch(doNarrow(getNarrowFromNotificationData(data, usersById)));
   }
 };
 
-export const handleInitialNotification = async (actions: Actions) => {
+export const handleInitialNotification = async (dispatch: Dispatch, usersById: UserIdMap) => {
   const data = await PushNotificationIOS.getInitialNotification();
-  handlePendingNotifications(data, actions);
+  handlePendingNotifications(data, dispatch, usersById);
 };

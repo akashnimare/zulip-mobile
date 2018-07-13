@@ -18,6 +18,7 @@ import type {
   EventRealmFiltersAction,
   EventUpdateGlobalNotificationsSettingsAction,
   EventUpdateDisplaySettingsAction,
+  EventUserGroupAction,
 } from '../types';
 import {
   INIT_ALERT_WORDS,
@@ -43,6 +44,11 @@ import {
   EVENT_USER_REMOVE,
   EVENT_USER_UPDATE,
   EVENT_MUTED_TOPICS,
+  EVENT_USER_GROUP_ADD,
+  EVENT_USER_GROUP_REMOVE,
+  EVENT_USER_GROUP_UPDATE,
+  EVENT_USER_GROUP_ADD_MEMBERS,
+  EVENT_USER_GROUP_REMOVE_MEMBERS,
   EVENT_REALM_EMOJI_UPDATE,
   EVENT_UPDATE_GLOBAL_NOTIFICATIONS_SETTINGS,
   EVENT_UPDATE_DISPLAY_SETTINGS,
@@ -70,6 +76,14 @@ const opToActionUser = {
   add: EVENT_USER_ADD,
   remove: EVENT_USER_REMOVE,
   update: EVENT_USER_UPDATE,
+};
+
+const opToActionUserGroup = {
+  add: EVENT_USER_GROUP_ADD,
+  remove: EVENT_USER_GROUP_REMOVE,
+  update: EVENT_USER_GROUP_UPDATE,
+  add_members: EVENT_USER_GROUP_ADD_MEMBERS,
+  remove_members: EVENT_USER_GROUP_REMOVE_MEMBERS,
 };
 
 const opToActionReaction = {
@@ -116,13 +130,19 @@ const realmUser = (state: GlobalState, event: Object): EventUserAction => ({
   type: opToActionUser[event.op],
 });
 
+const realmUserGroup = (state: GlobalState, event: Object): EventUserGroupAction => ({
+  ...event,
+  type: opToActionUserGroup[event.op],
+});
+
 const stream = (state: GlobalState, event: Object): EventStreamAction => ({
   ...event,
   type: opToActionStream[event.op],
 });
 
 const reaction = (state: GlobalState, event: Object): EventReactionAction => ({
-  type: opToActionReaction[event.op],
+  // This cast seems redundant; but without it Flow (0.67) gives a puzzling type error.
+  type: (opToActionReaction[event.op]: typeof EVENT_REACTION_ADD | typeof EVENT_REACTION_REMOVE),
   emoji: event.emoji_name,
   messageId: event.message_id,
   user: event.user,
@@ -232,6 +252,9 @@ export default (state: GlobalState, event: Object): EventAction => {
 
     case 'update_display_settings':
       return updateDisplaySettings(state, event);
+
+    case 'user_group':
+      return realmUserGroup(state, event);
 
     default:
       return { type: 'unknown', event };

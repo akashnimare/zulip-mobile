@@ -1,38 +1,42 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { View } from 'react-native';
 import type { ChildrenArray } from 'react';
 
-import type { Actions, LocalizableText, StyleObj } from '../types';
-import { connectWithActionsPreserveOnBack } from '../connectWithActions';
+import type { Dispatch, Context, LocalizableText, Style } from '../types';
 import { NAVBAR_SIZE } from '../styles';
-import { Label, ViewPlaceholder } from '../common';
+import { Label } from '../common';
 import { getCanGoBack } from '../selectors';
 import NavButton from './NavButton';
+import { navigateBack } from '../actions';
+import { connectPreserveOnBackOption } from '../utils/redux';
 
 type Props = {
-  actions: Actions,
+  dispatch: Dispatch,
   canGoBack: boolean,
   title?: LocalizableText,
   titleColor?: string,
   itemsColor: string,
   rightItem?: Object,
-  style: StyleObj,
+  style: Style,
   children?: ChildrenArray<*>,
-  childrenStyle?: StyleObj,
+  childrenStyle?: Style,
 };
 
 class ModalNavBar extends PureComponent<Props> {
+  context: Context;
+  props: Props;
+
   static contextTypes = {
     styles: () => null,
   };
 
-  props: Props;
-
   render() {
     const { styles } = this.context;
     const {
-      actions,
+      dispatch,
       canGoBack,
       title,
       titleColor,
@@ -43,7 +47,7 @@ class ModalNavBar extends PureComponent<Props> {
     } = this.props;
     const textStyle = [
       styles.navTitle,
-      canGoBack && { marginRight: NAVBAR_SIZE },
+      canGoBack ? { marginRight: NAVBAR_SIZE } : { marginLeft: 16 },
       rightItem ? { marginLeft: NAVBAR_SIZE } : {},
       titleColor ? { color: titleColor } : {},
     ];
@@ -57,9 +61,14 @@ class ModalNavBar extends PureComponent<Props> {
     return (
       <View style={[styles.navBar, style]}>
         {canGoBack && (
-          <NavButton name="arrow-left" color={itemsColor} onPress={actions.navigateBack} />
+          <NavButton
+            name="arrow-left"
+            color={itemsColor}
+            onPress={() => {
+              dispatch(navigateBack());
+            }}
+          />
         )}
-        <ViewPlaceholder width={8} />
         <View style={[styles.flexedLeftAlign, childrenStyle]}>{content}</View>
         {rightItem && <NavButton color={itemsColor} {...rightItem} />}
       </View>
@@ -67,6 +76,11 @@ class ModalNavBar extends PureComponent<Props> {
   }
 }
 
-export default connectWithActionsPreserveOnBack(state => ({
-  canGoBack: getCanGoBack(state),
-}))(ModalNavBar);
+export default connect(
+  state => ({
+    canGoBack: getCanGoBack(state),
+  }),
+  null,
+  null,
+  connectPreserveOnBackOption,
+)(ModalNavBar);

@@ -2,7 +2,7 @@
 import React, { PureComponent } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { StyleObj } from '../types';
+import type { Style } from '../types';
 import { BRAND_COLOR } from '../styles';
 import { unreadToLimitedCount } from '../utils/unread';
 import { foregroundColorFromBackground } from '../utils/color';
@@ -33,14 +33,27 @@ const styles = StyleSheet.create({
 });
 
 type Props = {
-  style?: StyleObj,
+  style?: Style,
   borderRadius: number,
   color: string,
   count: number,
   isMuted: boolean,
   inverse: boolean,
+  limited: boolean,
 };
 
+/**
+ * Unified way to display unread counts.
+ *
+ * @prop [style] - Style object for additional customization.
+ * @prop [borderRadius] - Border radius of component frame in pixels.
+ * @prop [color] - Background color.
+ * @prop [count] - Numerical value for the unread count.
+ * @prop [isMuted] - Flag indicating the entity to which the
+ *   unread count value is related is muted. Styled differently.
+ * @prop [inverse] - Indicate if styling should be inversed (dark on light).
+ * @prop [limited] - If set values over 100 will display as `99+`.
+ */
 export default class UnreadCount extends PureComponent<Props> {
   props: Props;
 
@@ -50,12 +63,15 @@ export default class UnreadCount extends PureComponent<Props> {
     count: 0,
     isMuted: false,
     inverse: false,
+    limited: false,
   };
 
   render() {
-    const { style, isMuted, borderRadius, color, count, inverse } = this.props;
+    const { style, isMuted, borderRadius, color, count, inverse, limited } = this.props;
 
-    if (!count) return null;
+    if (!count) {
+      return null;
+    }
 
     const frameStyle = [
       styles.frame,
@@ -72,7 +88,7 @@ export default class UnreadCount extends PureComponent<Props> {
     return (
       <View style={frameStyle}>
         <Text style={textStyle} numberOfLines={1}>
-          {unreadToLimitedCount(count)}
+          {limited ? unreadToLimitedCount(count) : count}
         </Text>
       </View>
     );

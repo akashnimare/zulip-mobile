@@ -25,9 +25,9 @@ import { getSelfUserDetail } from '../users/userSelectors';
 import { getUserByEmail, getUsersAndWildcards } from '../users/userHelpers';
 import { isStreamNarrow, isPrivateOrGroupNarrow } from '../utils/narrow';
 
-export const messageSendStart = (params: Object): MessageSendStartAction => ({
+export const messageSendStart = (outbox: Object): MessageSendStartAction => ({
   type: MESSAGE_SEND_START,
-  params,
+  outbox,
 });
 
 export const toggleOutboxSending = (sending: boolean): ToggleOutboxSendingAction => ({
@@ -75,15 +75,15 @@ const mapEmailsToUsers = (users, narrow, selfDetail) =>
     .split(',')
     .map(item => {
       const user = getUserByEmail(users, item);
-      return { email: item, id: user.id, full_name: user.fullName };
+      return { email: item, id: user.user_id, full_name: user.full_name };
     })
-    .concat({ email: selfDetail.email, id: selfDetail.id, full_name: selfDetail.fullName });
+    .concat({ email: selfDetail.email, id: selfDetail.user_id, full_name: selfDetail.full_name });
 
 // TODO type: `string | NamedUser[]` is a bit confusing.
 const extractTypeToAndSubjectFromNarrow = (
   narrow: Narrow,
   users: User[],
-  selfDetail: { email: string, id: number, fullName: string },
+  selfDetail: { email: string, user_id: number, full_name: string },
 ): { type: 'private' | 'stream', display_recipient: string | NamedUser[], subject: string } => {
   if (isPrivateOrGroupNarrow(narrow)) {
     return {
@@ -122,9 +122,9 @@ export const addToOutbox = (narrow: Narrow, content: string) => async (
       content: html,
       timestamp: localTime,
       id: localTime,
-      sender_full_name: userDetail.fullName,
-      email: userDetail.email,
-      avatar_url: userDetail.avatarUrl,
+      sender_full_name: userDetail.full_name,
+      sender_email: userDetail.email,
+      avatar_url: userDetail.avatar_url,
       isOutbox: true,
     }),
   );

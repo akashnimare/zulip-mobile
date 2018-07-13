@@ -1,4 +1,4 @@
-/* @noflow */
+/* @flow */
 import React, { PureComponent } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 
@@ -21,11 +21,20 @@ const styles = StyleSheet.create({
 });
 
 type Props = {
-  color: boolean,
+  color: string,
   showLogo: boolean,
   size: number,
 };
 
+/**
+ * Renders a loading indicator - light circle and a darker
+ * quarter of a circle spinning around it. Optionally,
+ * a Zulip logo in the center.
+ *
+ * @prop [color] - The color of the circle.
+ * @prop [showLogo] - Show or not a Zulip logo in the center.
+ * @prop [size] - Diameter of the indicator in pixels.
+ */
 export default class LoadingIndicator extends PureComponent<Props> {
   props: Props;
 

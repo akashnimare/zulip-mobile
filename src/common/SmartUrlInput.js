@@ -2,7 +2,7 @@
 import React, { PureComponent } from 'react';
 import { StyleSheet, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 
-import type { StyleObj } from '../types';
+import type { Context, Style } from '../types';
 import { autocompleteUrl, fixRealmUrl, hasProtocol } from '../utils/url';
 import RawLabel from './RawLabel';
 
@@ -10,6 +10,16 @@ const componentStyles = StyleSheet.create({
   wrapper: {
     flexDirection: 'row',
     opacity: 0.8,
+  },
+  realmInput: {
+    padding: 0,
+    fontSize: 20,
+  },
+  realmPlaceholder: {
+    opacity: 0.75,
+  },
+  realmInputEmpty: {
+    width: 1,
   },
 });
 
@@ -19,8 +29,7 @@ type Props = {
   protocol: string,
   append: string,
   navigation: Object,
-  shortAppend: string,
-  style?: StyleObj,
+  style?: Style,
   onChange: (value: string) => void,
   onSubmitEditing: () => Promise<void>,
   enablesReturnKeyAutomatically: boolean,
@@ -31,12 +40,13 @@ type State = {
 };
 
 export default class SmartUrlInput extends PureComponent<Props, State> {
-  textInputRef: any;
-  focusListener: Object;
+  context: Context;
   props: Props;
   state: State = {
     value: '',
   };
+  textInputRef: any;
+  focusListener: Object;
 
   static contextTypes = {
     styles: () => null,
@@ -55,8 +65,8 @@ export default class SmartUrlInput extends PureComponent<Props, State> {
   handleChange = (value: string) => {
     this.setState({ value });
 
-    const { append, shortAppend, protocol, onChange } = this.props;
-    onChange(fixRealmUrl(autocompleteUrl(value, protocol, append, shortAppend)));
+    const { append, protocol, onChange } = this.props;
+    onChange(fixRealmUrl(autocompleteUrl(value, protocol, append)));
   };
 
   urlPress = () => {
@@ -67,7 +77,11 @@ export default class SmartUrlInput extends PureComponent<Props, State> {
   renderPlaceholderPart = (text: string) => (
     <TouchableWithoutFeedback onPress={this.urlPress}>
       <RawLabel
-        style={[this.context.styles.realmInput, this.context.styles.realmPlaceholder]}
+        style={[
+          componentStyles.realmInput,
+          this.context.styles.color,
+          componentStyles.realmPlaceholder,
+        ]}
         text={text}
       />
     </TouchableWithoutFeedback>
@@ -79,17 +93,15 @@ export default class SmartUrlInput extends PureComponent<Props, State> {
       defaultOrganization,
       protocol,
       append,
-      shortAppend,
       defaultValue,
       style,
       onSubmitEditing,
       enablesReturnKeyAutomatically,
     } = this.props;
     let { value } = this.state;
-    let showAnyAppend = !value.match(/.+\..+\.+./g); // at least two dots
-    const useFullAppend = value.indexOf('.') === -1;
+    let showAppend = value.indexOf('.') === -1;
     if (defaultValue && value.length === 0) {
-      showAnyAppend = false;
+      showAppend = false;
       value = defaultValue;
     }
 
@@ -97,7 +109,11 @@ export default class SmartUrlInput extends PureComponent<Props, State> {
       <View style={[componentStyles.wrapper, style]}>
         {!hasProtocol(value) && this.renderPlaceholderPart(protocol)}
         <TextInput
-          style={[styles.realmInput, value.length === 0 && styles.realmInputEmpty]}
+          style={[
+            componentStyles.realmInput,
+            styles.color,
+            value.length === 0 && componentStyles.realmInputEmpty,
+          ]}
           autoFocus
           autoCorrect={false}
           autoCapitalize="none"
@@ -114,7 +130,7 @@ export default class SmartUrlInput extends PureComponent<Props, State> {
           }}
         />
         {value.length === 0 && this.renderPlaceholderPart(defaultOrganization)}
-        {showAnyAppend && this.renderPlaceholderPart(useFullAppend ? append : shortAppend)}
+        {showAppend && this.renderPlaceholderPart(append)}
       </View>
     );
   }

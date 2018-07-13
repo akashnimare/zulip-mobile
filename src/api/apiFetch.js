@@ -6,9 +6,9 @@ import { networkActivityStart, networkActivityStop } from '../utils/networkActiv
 
 const apiVersion = 'api/v1';
 
-export const apiFetch = async (auth: Auth, route: string, params: Object = {}) => {
-  const url = `${auth.realm}/${apiVersion}/${route}`;
+const defaultResFunc: ResponseExtractionFunc = res => res;
 
+export const fetchWithAuth = async (auth: Auth, url: string, params: Object = {}) => {
   if (!isValidUrl(url)) {
     throw new Error(`Invalid url ${url}`);
   }
@@ -28,27 +28,38 @@ export const apiFetch = async (auth: Auth, route: string, params: Object = {}) =
   return fetch(url, allParams);
 };
 
+export const apiFetch = async (auth: Auth, route: string, params: Object = {}) =>
+  fetchWithAuth(auth, `${auth.realm}/${apiVersion}/${route}`, params);
+
 export const apiCall = async (
   auth: Auth,
   route: string,
   params: Object = {},
-  resFunc: ResponseExtractionFunc = res => res,
+  resFunc: ResponseExtractionFunc = defaultResFunc,
   isSilent: boolean = false,
-  shouldTimeout: boolean = true,
 ) => {
   try {
     networkActivityStart(isSilent);
     const response = await apiFetch(auth, route, params);
 
+    if (!response.ok) {
+      console.log('Bad response for:', { auth, route, params, response }); // eslint-disable-line
+      const error = new Error('API');
+      // $FlowFixMe
+      error.response = response;
+      throw error;
+    }
+
     const json = await response.json();
 
     if (json.result !== 'success') {
-      console.log('Bad response for:', auth, route, params); // eslint-disable-line
-      throw Error(json.msg);
-    }
-
-    if (!response.ok) {
-      throw Error(response.statusText);
+      console.log('Bad response for:', { auth, route, params, response }); // eslint-disable-line
+      const error = new Error('API');
+      // $FlowFixMe
+      error.response = response;
+      // $FlowFixMe
+      error.code = json.code;
+      throw error;
     }
 
     return resFunc(json);
@@ -60,10 +71,9 @@ export const apiCall = async (
 export const apiGet = async (
   auth: Auth,
   route: string,
-  resFunc: ResponseExtractionFunc,
+  resFunc: ResponseExtractionFunc = defaultResFunc,
   params: Object = {},
   isSilent: boolean = false,
-  shouldTimeout: boolean = true,
 ) =>
   apiCall(
     auth,
@@ -73,13 +83,12 @@ export const apiGet = async (
     },
     resFunc,
     isSilent,
-    shouldTimeout,
   );
 
 export const apiPost = async (
   auth: Auth,
   route: string,
-  resFunc: ResponseExtractionFunc,
+  resFunc: ResponseExtractionFunc = defaultResFunc,
   params: Object = {},
 ) =>
   apiCall(
@@ -95,7 +104,7 @@ export const apiPost = async (
 export const apiFile = async (
   auth: Auth,
   route: string,
-  resFunc: ResponseExtractionFunc,
+  resFunc: ResponseExtractionFunc = defaultResFunc,
   body: FormData,
 ) =>
   apiCall(
@@ -111,7 +120,7 @@ export const apiFile = async (
 export const apiPut = async (
   auth: Auth,
   route: string,
-  resFunc: ResponseExtractionFunc,
+  resFunc: ResponseExtractionFunc = defaultResFunc,
   params: Object = {},
 ) =>
   apiCall(
@@ -127,7 +136,7 @@ export const apiPut = async (
 export const apiDelete = async (
   auth: Auth,
   route: string,
-  resFunc: ResponseExtractionFunc,
+  resFunc: ResponseExtractionFunc = defaultResFunc,
   params: Object = {},
 ) =>
   apiCall(
@@ -143,7 +152,7 @@ export const apiDelete = async (
 export const apiPatch = async (
   auth: Auth,
   route: string,
-  resFunc: ResponseExtractionFunc,
+  resFunc: ResponseExtractionFunc = defaultResFunc,
   params: Object = {},
 ) =>
   apiCall(
@@ -152,6 +161,21 @@ export const apiPatch = async (
     {
       method: 'patch',
       body: encodeAsURI(params),
+    },
+    resFunc,
+  );
+
+export const apiHead = async (
+  auth: Auth,
+  route: string,
+  resFunc: ResponseExtractionFunc = defaultResFunc,
+  params: Object = {},
+) =>
+  apiCall(
+    auth,
+    `${route}?${encodeAsURI(params)}`,
+    {
+      method: 'head',
     },
     resFunc,
   );

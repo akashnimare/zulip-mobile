@@ -27,10 +27,17 @@ export const updateExistingStream = (
   newValues: Object,
 ) => async (dispatch: Dispatch, getState: GetState) => {
   if (initialValues.name !== newValues.name) {
-    await updateStream(getAuth(getState()), id, 'name', newValues.name);
+    // Stream names might contain unsafe characters so we must encode it first.
+    await updateStream(getAuth(getState()), id, 'new_name', JSON.stringify(newValues.name));
   }
   if (initialValues.description !== newValues.description) {
-    await updateStream(getAuth(getState()), id, 'description', newValues.description);
+    // Description might contain unsafe characters so we must encode it first.
+    await updateStream(
+      getAuth(getState()),
+      id,
+      'description',
+      JSON.stringify(newValues.description),
+    );
   }
   if (initialValues.invite_only !== newValues.isPrivate) {
     await updateStream(getAuth(getState()), id, 'is_private', newValues.isPrivate);

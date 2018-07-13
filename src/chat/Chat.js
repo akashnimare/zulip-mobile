@@ -2,18 +2,20 @@
 import React, { PureComponent } from 'react';
 import { View } from 'react-native';
 
-import type { Narrow } from '../types';
+import type { Context, Narrow } from '../types';
 import { KeyboardAvoider, OfflineNotice } from '../common';
-import MessageListContainer from '../message/MessageListContainer';
+import MessageList from '../message/MessageList';
 import NoMessages from '../message/NoMessages';
-import ComposeBoxContainer from '../compose/ComposeBoxContainer';
+import ComposeBox from '../compose/ComposeBox';
 import UnreadNotice from './UnreadNotice';
 
 type Props = {
+  /* $FlowFixMe: probably this shouldn't be optional */
   narrow?: Narrow,
 };
 
 export default class Chat extends PureComponent<Props> {
+  context: Context;
   props: Props;
   messageInputRef = null;
   messageInputRef: any;
@@ -45,14 +47,14 @@ export default class Chat extends PureComponent<Props> {
           <OfflineNotice />
           <UnreadNotice narrow={narrow} />
           <NoMessages narrow={narrow} />
-          <MessageListContainer
+          <MessageList
             narrow={narrow}
             onReplySelect={this.handleReplySelect}
             listRef={component => {
               this.listComponent = component || this.listComponent;
             }}
           />
-          <ComposeBoxContainer
+          <ComposeBox
             narrow={narrow}
             messageInputRef={(component: any) => {
               this.messageInputRef = component || this.messageInputRef;

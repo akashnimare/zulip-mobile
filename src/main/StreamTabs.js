@@ -6,12 +6,12 @@ import { FormattedMessage } from 'react-intl';
 
 import type { TabNavigationOptionsPropsType } from '../types';
 import tabsOptions from '../styles/tabs';
-import SubscriptionsContainer from '../streams/SubscriptionsContainer';
-import StreamListContainer from '../subscriptions/StreamListContainer';
+import SubscriptionsCard from '../streams/SubscriptionsCard';
+import StreamListCard from '../subscriptions/StreamListCard';
 
 const styles = StyleSheet.create({
   tab: {
-    padding: 10,
+    padding: 8,
     fontSize: 16,
   },
 });
@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
 export default TabNavigator(
   {
     subscribed: {
-      screen: SubscriptionsContainer,
+      screen: SubscriptionsCard,
       navigationOptions: {
         tabBarLabel: (props: TabNavigationOptionsPropsType) => (
           <Text style={[styles.tab, { color: props.tintColor }]}>
@@ -29,7 +29,7 @@ export default TabNavigator(
       },
     },
     allStreams: {
-      screen: StreamListContainer,
+      screen: StreamListCard,
       navigationOptions: {
         tabBarLabel: (props: TabNavigationOptionsPropsType) => (
           <Text style={[styles.tab, { color: props.tintColor }]}>

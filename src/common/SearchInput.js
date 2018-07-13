@@ -17,15 +17,27 @@ const styles = StyleSheet.create({
 });
 
 type Props = {
+  autoFocus: boolean,
   onChange: (text: string) => void,
 };
 
+/**
+ * A light abstraction over the standard TextInput component
+ * that configures and styles it to be a used as a search input.
+ *
+ * @prop [autoFocus] - should the component be focused when mounted.
+ * @prop onChange - Event called when search query is edited.
+ */
 export default class SearchInput extends PureComponent<Props> {
   props: Props;
   textInput: TextInput;
 
+  static defaultProps = {
+    autoFocus: true,
+  };
+
   render() {
-    const { onChange } = this.props;
+    const { autoFocus, onChange } = this.props;
 
     return (
       <View style={styles.wrapper}>
@@ -42,7 +54,7 @@ export default class SearchInput extends PureComponent<Props> {
           placeholder="Search"
           returnKeyType="search"
           onChangeText={onChange}
-          autoFocus
+          autoFocus={autoFocus}
         />
       </View>
     );

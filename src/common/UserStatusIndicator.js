@@ -3,8 +3,8 @@
 import React, { PureComponent } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import type { StyleObj, Presence } from '../types';
-import { statusFromPresence } from '../users/userHelpers';
+import type { Style, Presence } from '../types';
+import { statusFromPresence } from '../utils/presence';
 
 const styles = StyleSheet.create({
   common: {
@@ -26,19 +26,37 @@ const styles = StyleSheet.create({
 });
 
 type Props = {
-  style: StyleObj,
+  style?: Style,
   presence?: Presence,
+  hideIfOffline: boolean,
 };
 
+/**
+ * A colored dot indicating user online status.
+ * * green if 'online'
+ * * orange if 'idle'
+ * * gray if 'offline'
+ *
+ * @prop [style] - Style object for additional customization.
+ * @prop [presence] - Presence object used to determine the status from.
+ * @prop hideIfOffline - Do not render for 'offline' state.
+ */
 export default class UserStatusIndicator extends PureComponent<Props> {
   props: Props;
 
   render() {
-    const { presence, style } = this.props;
+    const { presence, style, hideIfOffline } = this.props;
 
-    if (!presence || !presence.aggregated) return null;
+    if (!presence || !presence.aggregated) {
+      return null;
+    }
 
     const status = statusFromPresence(presence);
+
+    if (hideIfOffline && status === 'offline') {
+      return null;
+    }
+
     return <View style={[styles.common, styles[status], style]} />;
   }
 }

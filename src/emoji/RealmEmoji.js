@@ -1,8 +1,9 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { StyleSheet, Image } from 'react-native';
 
-import connectWithActions from '../connectWithActions';
 import { getActiveRealmEmoji } from '../selectors';
 
 const styles = StyleSheet.create({
@@ -23,12 +24,14 @@ class RealmEmoji extends PureComponent<Props> {
   render() {
     const { name, realmEmoji } = this.props;
 
-    if (!realmEmoji[name]) return null;
+    if (!realmEmoji[name]) {
+      return null;
+    }
 
     return <Image style={styles.image} source={{ uri: realmEmoji[name].source_url }} />;
   }
 }
 
-export default connectWithActions(state => ({
+export default connect(state => ({
   realmEmoji: getActiveRealmEmoji(state),
 }))(RealmEmoji);

@@ -2,7 +2,7 @@
 import base64 from 'base-64';
 import urlRegex from 'url-regex';
 
-import type { Auth, Narrow } from '../types';
+import type { Auth, Narrow, User } from '../types';
 import { homeNarrow, topicNarrow, streamNarrow, groupNarrow, specialNarrow } from './narrow';
 import { getUserById } from '../users/userHelpers';
 import { transformToEncodedURI } from './string';
@@ -25,7 +25,7 @@ export const getPathsFromUrl = (url: string = '', realm: string) => {
 export const getAuthHeader = (email: string, apiKey: string): ?string =>
   apiKey ? `Basic ${base64.encode(`${email}:${apiKey}`)}` : undefined;
 
-export const encodeAsURI = (params: Object): string =>
+export const encodeAsURI = (params: { [key: string]: any }): string =>
   Object.keys(params)
     .map((key: string) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
     .join('&');
@@ -45,19 +45,19 @@ export const isMessageLink = (url: string, realm: string): boolean =>
 export const isTopicLink = (url: string, realm: string): boolean => {
   const paths = getPathsFromUrl(url, realm);
   return (
-    isUrlInAppLink(url, realm) &&
-    ((paths.length === 4 || paths.length === 6) &&
-      paths[0] === 'stream' &&
-      (paths[2] === 'subject' || paths[2] === 'topic'))
+    isUrlInAppLink(url, realm)
+    && ((paths.length === 4 || paths.length === 6)
+      && paths[0] === 'stream'
+      && (paths[2] === 'subject' || paths[2] === 'topic'))
   );
 };
 
 export const isGroupLink = (url: string, realm: string): boolean => {
   const paths = getPathsFromUrl(url, realm);
   return (
-    isUrlInAppLink(url, realm) &&
-    ((paths.length === 2 && paths[0] === 'pm-with') ||
-      (paths.length === 4 && paths[0] === 'pm-with' && paths[2] === 'near'))
+    isUrlInAppLink(url, realm)
+    && ((paths.length === 2 && paths[0] === 'pm-with')
+      || (paths.length === 4 && paths[0] === 'pm-with' && paths[2] === 'near'))
   );
 };
 
@@ -69,10 +69,10 @@ export const isStreamLink = (url: string, realm: string): boolean => {
 export const isSpecialLink = (url: string, realm: string): boolean => {
   const paths = getPathsFromUrl(url, realm);
   return (
-    isUrlInAppLink(url, realm) &&
-    paths.length === 2 &&
-    paths[0] === 'is' &&
-    /^(private|starred|mentioned)/i.test(paths[1])
+    isUrlInAppLink(url, realm)
+    && paths.length === 2
+    && paths[0] === 'is'
+    && /^(private|starred|mentioned)/i.test(paths[1])
   );
 };
 
@@ -82,7 +82,7 @@ export const isEmojiUrl = (url: string, realm: string): boolean =>
 export const getEmojiUrl = (unicode: string): string =>
   `/static/generated/emoji/images/emoji/unicode/${unicode}.png`;
 
-export const getNarrowFromLink = (url: string, realm: string, users: any[]): Narrow => {
+export const getNarrowFromLink = (url: string, realm: string, users: User[]): Narrow => {
   const paths = getPathsFromUrl(url, realm);
 
   if (isGroupLink(url, realm)) {
@@ -147,16 +147,21 @@ const mimes = {
 export const getMimeTypeFromFileExtension = (extension: string): string =>
   mimes[extension.toLowerCase()] || 'application/octet-stream';
 
-export const autocompleteUrl = (
-  value: string = '',
-  protocol: string,
-  append: string,
-  shortAppend: string,
-): string =>
+export const autocompleteUrl = (value: string = '', protocol: string, append: string): string =>
   value.length > 0
     ? `${hasProtocol(value) ? '' : protocol}${value || 'your-org'}${
-        value.indexOf('.') === -1 ? append : !value.match(/.+\..+\.+./g) ? shortAppend : ''
+        value.indexOf('.') === -1 ? append : ''
       }`
     : '';
 
 export const isValidUrl = (url: string): boolean => urlRegex({ exact: true }).test(url);
+
+// This formula borrowed from MDN:
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+const escapeRegExp = (str: string): string => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export const appendAuthToImages = (messageStr: string, auth: Auth): string =>
+  messageStr.replace(
+    new RegExp(`<img src="((?:|/|${escapeRegExp(auth.realm)}/)user_uploads/[^"]*)"`, 'g'),
+    `<img src="$1?api_key=${auth.apiKey}"`,
+  );

@@ -1,9 +1,9 @@
 /* @flow */
 import React, { PureComponent } from 'react';
 import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
-import { FormattedMessage } from 'react-intl';
+import TranslatedText from './TranslatedText';
 
-import type { StyleObj } from '../types';
+import type { Style } from '../types';
 import { BRAND_COLOR } from '../styles';
 import Touchable from './Touchable';
 
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
 });
 
 type ButtonInProgressProps = {
-  frameStyle: StyleObj,
+  frameStyle: Style,
 };
 
 const ButtonInProgress = ({ frameStyle }: ButtonInProgressProps) => (
@@ -73,11 +73,11 @@ const ButtonInProgress = ({ frameStyle }: ButtonInProgressProps) => (
 );
 
 type ButtonNormalProps = {
-  frameStyle: StyleObj,
-  touchTargetStyle: StyleObj,
-  textStyle: StyleObj,
+  frameStyle: Style,
+  touchTargetStyle: Style,
+  textStyle: Style,
   text: string,
-  iconStyle: StyleObj,
+  iconStyle: Style,
   Icon?: Object,
   onPress?: () => void | Promise<any>,
 };
@@ -96,7 +96,7 @@ const ButtonNormal = ({
       <View style={styles.buttonContent}>
         {Icon && <Icon style={iconStyle} size={25} />}
         <Text style={textStyle}>
-          <FormattedMessage id={text} defaultMessage={text} />
+          <TranslatedText text={text} />
         </Text>
       </View>
     </Touchable>
@@ -104,7 +104,7 @@ const ButtonNormal = ({
 );
 
 type Props = {
-  style?: StyleObj,
+  style?: Style,
   progress?: boolean,
   disabled: boolean,
   Icon?: Object,
@@ -114,6 +114,22 @@ type Props = {
   onPress: () => void | Promise<any>,
 };
 
+/**
+ * A button component that is provides consistent look and feel
+ * thoughout the app. It can be disabled or show action-in-progress.
+ *
+ * If several buttons are on the same screen all or all but one should
+ * have their `secondary` property set to `true`.
+ *
+ * @prop [style] - Style object applied to the Text component.
+ * @prop [progress] - Shows a progress indicator in place of the button text.
+ * @prop [disabled] - If set the button is not pressable and visually looks disabled.
+ * @prop [Icon] - Icon component to display in front of the button text
+ * @prop text - The button text
+ * @prop [secondary] - Less prominent styling, the button is not as important.
+ * @prop [fullSize] - The button becomes as wide as its container.
+ * @prop onPress - Event called on button press.
+ */
 export default class ZulipButton extends PureComponent<Props> {
   props: Props;
 

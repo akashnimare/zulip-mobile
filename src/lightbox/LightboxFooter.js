@@ -2,7 +2,7 @@
 import React, { PureComponent } from 'react';
 import { Text, StyleSheet, View } from 'react-native';
 
-import type { StyleObj } from '../types';
+import type { Style } from '../types';
 import NavButton from '../nav/NavButton';
 
 const styles = StyleSheet.create({
@@ -10,8 +10,8 @@ const styles = StyleSheet.create({
     height: 44,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingLeft: 15,
-    paddingRight: 5,
+    paddingLeft: 16,
+    paddingRight: 8,
     flex: 1,
   },
   text: {
@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
 });
 
 type Props = {
-  style?: StyleObj,
+  style?: Style,
   displayMessage: string,
   onOptionsPress: () => void,
 };

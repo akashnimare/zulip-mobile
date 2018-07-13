@@ -1,13 +1,15 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { StyleSheet, View, ScrollView } from 'react-native';
 
-import type { ChildrenArray, Dimensions, LocalizableText } from '../types';
-import connectWithActions from '../connectWithActions';
+import type { ChildrenArray, Context, Dimensions, LocalizableText, Style } from '../types';
 import { KeyboardAvoider, ZulipStatusBar } from '../common';
 import { getSession } from '../selectors';
 import ModalNavBar from '../nav/ModalNavBar';
 import ModalSearchNavBar from '../nav/ModalSearchNavBar';
+import { connectPreserveOnBackOption } from '../utils/redux';
 
 const componentStyles = StyleSheet.create({
   wrapper: {
@@ -22,12 +24,10 @@ const componentStyles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
   },
-  padding: {
-    padding: 10,
-  },
 });
 
 type Props = {
+  autoFocus: boolean,
   centerContent: boolean,
   children: ChildrenArray<*>,
   safeAreaInsets: Dimensions,
@@ -35,10 +35,30 @@ type Props = {
   padding?: boolean,
   search?: boolean,
   title?: LocalizableText,
+  style?: Style,
   searchBarOnChange?: (text: string) => void,
 };
 
+/**
+ * A component representing a distinct screen of the app
+ * ensuring consistent look-and-feel trhoughout.
+ * It can control the status bar, can render a nav bar or
+ * include a search input, center its contents, etc.
+ *
+ * @prop [autoFocus] - If search bar enabled, should it be focused initially.
+ * @prop [centerContent] - Should the contents be centered.
+ * @prop children - Components to render inside the screen.
+ * @prop safeAreaInsets - Supports safe area edge offsetting. Google 'iOS Safe Area'.
+ * @prop [keyboardShouldPersistTaps] - Sets the same prop value to the internal
+ *   ScrollView component.
+ * @prop [padding] - Should padding be added to the contents of the screen.
+ * @prop [search] - If 'true' show a search box in place of the title.
+ * @prop [title] - Text shown as the title of the screen.
+ * @prop [style] - Additional style for the wrapper container.
+ * @prop searchBarOnChange - Event called on search query change.
+ */
 class Screen extends PureComponent<Props> {
+  context: Context;
   props: Props;
 
   static contextTypes = {
@@ -46,12 +66,14 @@ class Screen extends PureComponent<Props> {
   };
 
   static defaultProps = {
+    autoFocus: false,
     centerContent: false,
-    keyboardShouldPersistTaps: 'never',
+    keyboardShouldPersistTaps: 'handled',
   };
 
   render() {
     const {
+      autoFocus,
       centerContent,
       children,
       keyboardShouldPersistTaps,
@@ -59,26 +81,27 @@ class Screen extends PureComponent<Props> {
       safeAreaInsets,
       search,
       searchBarOnChange,
+      style,
       title,
     } = this.props;
     const { styles } = this.context;
-    const ModalBar = search ? ModalSearchNavBar : ModalNavBar;
 
     return (
       <View style={[styles.screen, { marginBottom: safeAreaInsets.bottom }]}>
         <ZulipStatusBar />
-        <ModalBar title={title} searchBarOnChange={searchBarOnChange} />
+        {search ? (
+          <ModalSearchNavBar autoFocus={autoFocus} searchBarOnChange={searchBarOnChange} />
+        ) : (
+          <ModalNavBar title={title} />
+        )}
         <KeyboardAvoider
           behavior="padding"
-          keyboardShouldPersistTaps="always"
-          style={[componentStyles.wrapper, padding && componentStyles.padding]}
-          contentContainerStyle={[padding && componentStyles.padding]}
+          style={[componentStyles.wrapper, padding && styles.padding]}
+          contentContainerStyle={[padding && styles.padding]}
         >
           <ScrollView
-            contentContainerStyle={[
-              componentStyles.childrenWrapper,
-              centerContent && componentStyles.content,
-            ]}
+            style={componentStyles.childrenWrapper}
+            contentContainerStyle={[centerContent && componentStyles.content, style]}
             keyboardShouldPersistTaps={keyboardShouldPersistTaps}
           >
             {children}
@@ -89,6 +112,11 @@ class Screen extends PureComponent<Props> {
   }
 }
 
-export default connectWithActions((state, props) => ({
-  safeAreaInsets: getSession(state).safeAreaInsets,
-}))(Screen);
+export default connect(
+  (state, props) => ({
+    safeAreaInsets: getSession(state).safeAreaInsets,
+  }),
+  null,
+  null,
+  connectPreserveOnBackOption,
+)(Screen);

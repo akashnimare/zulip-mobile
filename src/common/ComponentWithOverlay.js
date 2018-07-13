@@ -3,7 +3,7 @@
 import React, { PureComponent } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import type { ChildrenArray, StyleObj } from '../types';
+import type { ChildrenArray, Style } from '../types';
 import { BRAND_COLOR } from '../styles';
 import { Touchable } from '../common';
 
@@ -37,15 +37,33 @@ const styles = StyleSheet.create({
 
 type Props = {
   children: ChildrenArray<*>,
+  accessibilityLabel?: string,
   overlay: any,
   showOverlay: boolean,
   overlaySize: number,
   overlayColor: string,
   overlayPosition: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left',
-  style?: StyleObj,
+  style?: Style,
   onPress?: () => void,
 };
 
+/**
+ * Layout component that streamlines how we
+ * overlay a component over another component
+ *
+ * @prop children - Main component to be rendered.
+ * @prop overlay - Component to be overlayed over the main one.
+ * @prop [showOverlay] - Should the overlay be shown.
+ * @prop [overlaySize] - The size of the overlay in pixels,
+ * @prop [overlayColor] - The color of the overlay.
+ * @prop [overlayPosition] - Overlay position can be one of the following:
+ *  * 'top-right'
+ *  * 'top-left'
+ *  * 'bottom-right'
+ *  * 'bottom-left'
+ * @prop [style] - Style object applied to the main component.
+ * @prop [onPress] - Event called on pressing the main component.
+ */
 export default class ComponentWithOverlay extends PureComponent<Props> {
   props: Props;
 
@@ -59,6 +77,7 @@ export default class ComponentWithOverlay extends PureComponent<Props> {
   render() {
     const {
       children,
+      accessibilityLabel,
       style,
       overlay,
       showOverlay,
@@ -82,7 +101,7 @@ export default class ComponentWithOverlay extends PureComponent<Props> {
     ];
 
     return (
-      <Touchable onPress={onPress}>
+      <Touchable onPress={onPress} accessibilityLabel={accessibilityLabel}>
         <View style={wrapperStyle}>
           {children}
           {showOverlay && overlaySize > 0 && <View style={overlayStyle}>{overlay}</View>}

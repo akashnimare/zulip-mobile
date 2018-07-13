@@ -1,4 +1,13 @@
-import { timeout, tryUntilSuccessful } from '../async';
+import { sleep, timeout, tryUntilSuccessful } from '../async';
+
+describe('sleep', () => {
+  test('waits for a given time in milliseconds', async () => {
+    const start = Date.now();
+    await sleep(1000);
+    const duration = Date.now() - start;
+    expect(duration > 1000 && duration < 1100).toBeTruthy();
+  });
+});
 
 describe('timeout', () => {
   test('when no parameters passed, there is no timeout', async () => {
@@ -41,7 +50,9 @@ describe('tryUntilSuccessful', () => {
     let callCount = 0;
     const thrower = () => {
       callCount++;
-      if (callCount === 1) throw new Error('First run exception');
+      if (callCount === 1) {
+        throw new Error('First run exception');
+      }
       return 'hello';
     };
 
@@ -54,7 +65,9 @@ describe('tryUntilSuccessful', () => {
     let callCount = 0;
     const thrower = () => {
       callCount++;
-      if (callCount === 1) throw new Error('First run exception');
+      if (callCount === 1) {
+        throw new Error('First run exception');
+      }
       return 'hello';
     };
 

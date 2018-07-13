@@ -1,22 +1,13 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import type { PresenceState, User } from '../types';
-import { Avatar } from '../common';
+import type { Context, PresenceState, User } from '../types';
+import { Avatar, ViewPlaceholder } from '../common';
 import ActivityText from './ActivityText';
-
-const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 18,
-    paddingLeft: 8,
-  },
-});
+import { getPresence, getUserInPmNarrow } from '../selectors';
 
 type Props = {
   user: User,
@@ -24,27 +15,40 @@ type Props = {
   presence: PresenceState,
 };
 
-export default class TitlePrivate extends PureComponent<Props> {
+class TitlePrivate extends PureComponent<Props> {
+  context: Context;
+  props: Props;
+
+  static contextTypes = {
+    styles: () => null,
+  };
+
   render() {
+    const { styles } = this.context;
     const { user, color, presence } = this.props;
-    const { fullName, avatarUrl, email } = user;
 
     return (
-      <View style={styles.wrapper}>
+      <View style={styles.navWrapper}>
         <Avatar
           size={32}
-          name={fullName}
-          email={email}
-          avatarUrl={avatarUrl}
-          presence={presence[email]}
+          name={user.full_name}
+          email={user.email}
+          avatarUrl={user.avatar_url}
+          presence={presence[user.email]}
         />
+        <ViewPlaceholder width={8} />
         <View>
-          <Text style={[styles.title, { color }]} numberOfLines={1} ellipsizeMode="tail">
-            {fullName}
+          <Text style={[styles.navTitle, { color }]} numberOfLines={1} ellipsizeMode="tail">
+            {user.full_name}
           </Text>
-          <ActivityText color={color} email={email} />
+          <ActivityText style={styles.navSubtitle} color={color} email={user.email} />
         </View>
       </View>
     );
   }
 }
+
+export default connect((state, props) => ({
+  user: getUserInPmNarrow(props.narrow)(state),
+  presence: getPresence(state),
+}))(TitlePrivate);

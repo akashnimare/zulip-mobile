@@ -8,6 +8,7 @@ import eventToAction from './eventToAction';
 import eventMiddleware from './eventMiddleware';
 import { getAuth } from '../selectors';
 import actionCreator from '../actionCreator';
+import progressiveTimeout from '../utils/progressiveTimeout';
 
 export const responseToActions = (state: GlobalState, response: Object): EventAction[] =>
   response.events
@@ -16,7 +17,9 @@ export const responseToActions = (state: GlobalState, response: Object): EventAc
       return eventToAction(state, event);
     })
     .filter(action => {
-      if (action.type === 'ignore') return false;
+      if (action.type === 'ignore') {
+        return false;
+      }
 
       if (!action || !action.type || action.type === 'unknown') {
         console.log('Can not handle event', action.event); // eslint-disable-line
@@ -40,6 +43,7 @@ export const startEventPolling = (queueId: number, eventId: number) => async (
 ) => {
   let lastEventId = eventId;
 
+  /* eslint-disable no-await-in-loop */
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const auth = getAuth(getState());
@@ -58,10 +62,15 @@ export const startEventPolling = (queueId: number, eventId: number) => async (
 
       lastEventId = Math.max.apply(null, [lastEventId, ...response.events.map(x => x.id)]);
     } catch (e) {
-      // The event queue is too old or has been garbage collected
-      if (e.message.indexOf('too old') !== -1 || e.message.indexOf('Bad event queue id') !== -1) {
-        dispatch(appRefresh());
-        break;
+      // protection from inadvertent DDOS
+      await progressiveTimeout();
+
+      if (e.message === 'API') {
+        // The event queue is too old or has been garbage collected
+        if (e.response.status === 400 && e.code === 'BAD_EVENT_QUEUE_ID') {
+          dispatch(appRefresh());
+          break;
+        }
       }
     }
   }

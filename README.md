@@ -59,9 +59,9 @@ are a great starting point for PRs.
 Further reading:
 
 * [Architecture](docs/architecture.md)
-* [Testing](docs/testing.md)
-* [Recommended Reading](docs/recommended-reading.md)
-* [Release Guide](docs/release-guide.md)
+* [Testing](docs/howto/testing.md)
+* [Recommended Reading](docs/background/recommended-reading.md)
+* [Release Guide](docs/howto/release-guide.md)
 
 ### History
 

@@ -2,18 +2,13 @@
 import React, { PureComponent } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import type { Context } from '../types';
 import { BRAND_COLOR } from '../styles';
 import { RawLabel, Touchable, UnreadCount, ZulipSwitch } from '../common';
 import { foregroundColorFromBackground } from '../utils/color';
 import StreamIcon from './StreamIcon';
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexGrow: 50,
-    padding: 8,
-  },
+const componentStyles = StyleSheet.create({
   selectedRow: {
     backgroundColor: BRAND_COLOR,
   },
@@ -39,7 +34,7 @@ type Props = {
   isPrivate?: boolean,
   isSelected?: boolean,
   showSwitch?: boolean,
-  color: string,
+  color?: string,
   backgroundColor?: string,
   isSwitchedOn?: boolean,
   unreadCount?: number,
@@ -48,6 +43,7 @@ type Props = {
 };
 
 export default class StreamItem extends PureComponent<Props> {
+  context: Context;
   props: Props;
 
   static contextTypes = {
@@ -64,6 +60,7 @@ export default class StreamItem extends PureComponent<Props> {
   };
 
   render() {
+    const { styles } = this.context;
     const {
       name,
       description,
@@ -79,38 +76,41 @@ export default class StreamItem extends PureComponent<Props> {
     } = this.props;
 
     const wrapperStyle = [
-      styles.row,
+      styles.listItem,
       { backgroundColor },
-      isSelected && styles.selectedRow,
-      isMuted && styles.muted,
+      isSelected && componentStyles.selectedRow,
+      isMuted && componentStyles.muted,
     ];
     const iconColor = isSelected
       ? 'white'
-      : backgroundColor ? foregroundColorFromBackground(backgroundColor) : color;
+      : color
+        || foregroundColorFromBackground(
+          backgroundColor // $FlowFixMe
+            || (StyleSheet.flatten(styles.backgroundColor) || {}).backgroundColor
+            || null,
+        );
     const textColorStyle = isSelected
       ? { color: 'white' }
       : backgroundColor
         ? { color: foregroundColorFromBackground(backgroundColor) }
-        : this.context.styles.color;
+        : styles.color;
 
     return (
       <Touchable onPress={this.handlePress}>
         <View style={wrapperStyle}>
           <StreamIcon size={iconSize} color={iconColor} isMuted={isMuted} isPrivate={isPrivate} />
-          <View style={styles.text}>
+          <View style={componentStyles.text}>
             <RawLabel numberOfLines={1} style={textColorStyle} text={name} ellipsizeMode="tail" />
             {!!description && (
               <RawLabel
                 numberOfLines={1}
-                style={styles.description}
+                style={componentStyles.description}
                 text={description}
                 ellipsizeMode="tail"
               />
             )}
           </View>
-          {unreadCount && (
-            <UnreadCount color={iconColor} count={unreadCount} inverse={isSelected} />
-          )}
+          <UnreadCount color={iconColor} count={unreadCount} inverse={isSelected} />
           {showSwitch && (
             <ZulipSwitch
               defaultValue={!!isSwitchedOn}

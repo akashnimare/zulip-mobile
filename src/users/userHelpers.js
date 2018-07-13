@@ -1,40 +1,19 @@
 /* @flow */
 import uniqby from 'lodash.uniqby';
-import differenceInMinutes from 'date-fns/difference_in_minutes';
 
-import type { Presence, User, UserStatus, PresenceState } from '../types';
+import type { Presence, User, UserGroup, PresenceState } from '../types';
 import { NULL_USER } from '../nullObjects';
-
-export const statusFromPresence = (presence?: Presence): UserStatus => {
-  if (!presence || !presence.aggregated) {
-    return 'offline';
-  }
-
-  if (presence.aggregated.status === 'offline') {
-    return 'offline';
-  }
-
-  const timestampDate = new Date(presence.aggregated.timestamp * 1000);
-  const diffToNowInMinutes = differenceInMinutes(Date.now(), timestampDate);
-
-  if (diffToNowInMinutes > 60) {
-    return 'offline';
-  }
-  if (diffToNowInMinutes > 5) {
-    return 'idle';
-  }
-  return 'active';
-};
+import { statusFromPresence } from '../utils/presence';
 
 export const getUserByEmail = (users: User[], userEmail: string): User =>
   users.find(user => user.email === userEmail) || NULL_USER;
 
 export const getUserById = (users: User[], userId: number): User =>
-  users.find(user => user.id === userId) || NULL_USER;
+  users.find(user => user.user_id === userId) || NULL_USER;
 
 export const groupUsersByInitials = (users: User[]): Object =>
   users.reduce((accounts, x) => {
-    const firstLetter = x.fullName[0].toUpperCase();
+    const firstLetter = x.full_name[0].toUpperCase();
     if (!accounts[firstLetter]) {
       accounts[firstLetter] = []; // eslint-disable-line
     }
@@ -69,27 +48,28 @@ const statusOrder = (presence: Presence): number => {
 export const sortUserList = (users: any[], presences: PresenceState): User[] =>
   [...users].sort(
     (x1, x2) =>
-      statusOrder(presences[x1.email]) - statusOrder(presences[x2.email]) ||
-      x1.fullName.toLowerCase().localeCompare(x2.fullName.toLowerCase()),
+      statusOrder(presences[x1.email]) - statusOrder(presences[x2.email])
+      || x1.full_name.toLowerCase().localeCompare(x2.full_name.toLowerCase()),
   );
 
 export const filterUserList = (users: User[], filter: string = '', ownEmail: ?string): User[] =>
   users.length > 0
     ? users.filter(
         user =>
-          user.email !== ownEmail &&
-          (filter === '' ||
-            user.fullName.toLowerCase().includes(filter.toLowerCase()) ||
-            user.email.toLowerCase().includes(filter.toLowerCase())),
+          user.email !== ownEmail
+          && (filter === ''
+            || user.full_name.toLowerCase().includes(filter.toLowerCase())
+            || user.email.toLowerCase().includes(filter.toLowerCase())),
       )
     : users;
 
 export const sortAlphabetically = (users: User[]): User[] =>
-  [...users].sort((x1, x2) => x1.fullName.toLowerCase().localeCompare(x2.fullName.toLowerCase()));
+  [...users].sort((x1, x2) => x1.full_name.toLowerCase().localeCompare(x2.full_name.toLowerCase()));
 
 export const filterUserStartWith = (users: User[], filter: string = '', ownEmail: string): User[] =>
   users.filter(
-    user => user.email !== ownEmail && user.fullName.toLowerCase().startsWith(filter.toLowerCase()),
+    user =>
+      user.email !== ownEmail && user.full_name.toLowerCase().startsWith(filter.toLowerCase()),
   );
 
 export const filterUserByInitials = (
@@ -99,8 +79,8 @@ export const filterUserByInitials = (
 ): User[] =>
   users.filter(
     user =>
-      user.email !== ownEmail &&
-      user.fullName
+      user.email !== ownEmail
+      && user.full_name
         .replace(/(\s|[a-z])/g, '')
         .toLowerCase()
         .startsWith(filter.toLowerCase()),
@@ -112,7 +92,7 @@ export const filterUserThatContains = (
   ownEmail: string,
 ): User[] =>
   users.filter(
-    user => user.email !== ownEmail && user.fullName.toLowerCase().includes(filter.toLowerCase()),
+    user => user.email !== ownEmail && user.full_name.toLowerCase().includes(filter.toLowerCase()),
   );
 
 export const filterUserMatchesEmail = (
@@ -127,8 +107,8 @@ export const filterUserMatchesEmail = (
 export const getUniqueUsers = (users: User[]): User[] => uniqby(users, 'email');
 
 export const getUsersAndWildcards = (users: User[]) => [
-  { ...NULL_USER, fullName: 'all', email: '(Notify everyone)' },
-  { ...NULL_USER, fullName: 'everyone', email: '(Notify everyone)' },
+  { ...NULL_USER, full_name: 'all', email: '(Notify everyone)' },
+  { ...NULL_USER, full_name: 'everyone', email: '(Notify everyone)' },
   ...users,
 ];
 
@@ -147,3 +127,13 @@ export const getAutocompleteSuggestion = (
   const matchesEmail = filterUserMatchesEmail(users, filter, ownEmail);
   return getUniqueUsers([...startWith, ...initials, ...contains, ...matchesEmail]);
 };
+
+export const getAutocompleteUserGroupSuggestions = (
+  userGroups: UserGroup[],
+  filter: string = '',
+): UserGroup[] =>
+  userGroups.filter(
+    userGroup =>
+      userGroup.name.toLowerCase().includes(filter.toLowerCase())
+      || userGroup.description.toLowerCase().includes(filter.toLowerCase()),
+  );

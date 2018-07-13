@@ -1,7 +1,9 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 
-import connectWithActions from '../connectWithActions';
+import type { Context } from '../types';
 import { Touchable, Label } from '../common';
 import { getFullUrl } from '../utils/url';
 import openLink from '../utils/openLink';
@@ -13,12 +15,20 @@ type Props = {
   realm: string,
 };
 
+/**
+ * A button styled like a web link.
+ *
+ * @prop label - Text of the button.
+ * @prop href - URL address to open on press.
+ * @prop realm - Current realm. Used if the `href` preoperty is relative.
+ */
 class WebLink extends PureComponent<Props> {
+  context: Context;
+  props: Props;
+
   static contextTypes = {
     styles: () => null,
   };
-
-  props: Props;
 
   handlePress = () => {
     const { realm, href } = this.props;
@@ -37,6 +47,6 @@ class WebLink extends PureComponent<Props> {
   }
 }
 
-export default connectWithActions(state => ({
+export default connect(state => ({
   realm: getCurrentRealm(state),
 }))(WebLink);

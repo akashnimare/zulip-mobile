@@ -1,12 +1,14 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { StyleSheet } from 'react-native';
 
-import type { Auth, Actions } from '../types';
-import connectWithActions from '../connectWithActions';
+import type { Auth, Account, Dispatch } from '../types';
 import { getAuth, getAccounts } from '../selectors';
 import { Centerer, ZulipButton, Logo, Screen } from '../common';
 import AccountList from './AccountList';
+import { navigateToAddNewAccount, switchAccount, removeAccount } from '../actions';
 
 const styles = StyleSheet.create({
   button: {
@@ -16,30 +18,32 @@ const styles = StyleSheet.create({
 
 type Props = {
   auth: Auth,
-  accounts: any[],
-  actions: Actions,
+  accounts: Account[],
+  dispatch: Dispatch,
 };
 
 class AccountPickScreen extends PureComponent<Props> {
   props: Props;
 
   handleAccountSelect = (index: number) => {
-    const { accounts, actions } = this.props;
+    const { accounts, dispatch } = this.props;
     const { realm, apiKey } = accounts[index];
     if (apiKey) {
-      actions.switchAccount(index);
+      setTimeout(() => {
+        dispatch(switchAccount(index));
+      });
     } else {
-      actions.navigateToAddNewAccount(realm);
+      dispatch(navigateToAddNewAccount(realm));
     }
   };
 
-  handleAccountRemove = (index: number) => this.props.actions.removeAccount(index);
+  handleAccountRemove = (index: number) => this.props.dispatch(removeAccount(index));
 
   render() {
-    const { accounts, actions, auth } = this.props;
+    const { accounts, dispatch, auth } = this.props;
 
     return (
-      <Screen title="Pick account" padding>
+      <Screen title="Pick account" centerContent padding>
         <Centerer>
           {accounts.length === 0 && <Logo />}
           <AccountList
@@ -51,7 +55,9 @@ class AccountPickScreen extends PureComponent<Props> {
           <ZulipButton
             text="Add new account"
             style={styles.button}
-            onPress={() => actions.navigateToAddNewAccount('')}
+            onPress={() => {
+              dispatch(navigateToAddNewAccount(''));
+            }}
           />
         </Centerer>
       </Screen>
@@ -59,7 +65,7 @@ class AccountPickScreen extends PureComponent<Props> {
   }
 }
 
-export default connectWithActions(state => ({
+export default connect(state => ({
   auth: getAuth(state),
   accounts: getAccounts(state),
 }))(AccountPickScreen);

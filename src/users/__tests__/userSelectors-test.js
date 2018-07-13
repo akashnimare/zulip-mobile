@@ -6,7 +6,9 @@ import {
   getUsersStatusActive,
   getUsersStatusIdle,
   getUsersStatusOffline,
-  getUsersByEmail,
+  getActiveUsersAndBots,
+  getAllUsersAndBots,
+  getAllUsersAndBotsByEmail,
   getUsersById,
   getUsersSansMe,
 } from '../userSelectors';
@@ -18,6 +20,7 @@ describe('getAccountDetailsUser', () => {
         index: 1,
         routes: [{ routeName: 'first' }, { routeName: 'second', params: { email: 'b@a.com' } }],
       },
+      realm: {},
       users: [{ firstName: 'a', email: 'a@a.com' }, { firstName: 'b', email: 'b@a.com' }],
     });
     const expectedUser = { firstName: 'b', email: 'b@a.com' };
@@ -36,16 +39,18 @@ describe('getAccountDetailsUser', () => {
           { routeName: 'second', params: { email: 'b@a.com' } },
         ],
       },
+      realm: {},
       users: [],
     });
     const expectedUser = {
       email: 'b@a.com',
-      fullName: 'b@a.com',
-      avatarUrl: '',
-      id: -1,
-      isActive: false,
-      isAdmin: false,
-      isBot: false,
+      full_name: 'b@a.com',
+      avatar_url: '',
+      timezone: '',
+      user_id: -1,
+      is_active: false,
+      is_admin: false,
+      is_bot: false,
     };
 
     const actualUser = getAccountDetailsUser(state);
@@ -58,14 +63,14 @@ describe('getActiveUsers', () => {
   test('return all active users from state', () => {
     const state = deepFreeze({
       users: [
-        { fullName: 'Abc', isActive: true },
-        { fullName: 'Def', isActive: false },
-        { fullName: 'Xyz', isActive: true },
+        { full_name: 'Abc', is_active: true },
+        { full_name: 'Def', is_active: false },
+        { full_name: 'Xyz', is_active: true },
       ],
     });
     const expectedUsers = [
-      { fullName: 'Abc', isActive: true },
-      { fullName: 'Xyz', isActive: true },
+      { full_name: 'Abc', is_active: true },
+      { full_name: 'Xyz', is_active: true },
     ];
 
     const actualUser = getActiveUsers(state);
@@ -78,9 +83,9 @@ describe('getUsersStatusActive', () => {
   test('returns users with presence status set as "active"', () => {
     const state = deepFreeze({
       users: [
-        { email: 'abc@example.com', isActive: true },
-        { email: 'def@example.com', isActive: true },
-        { email: 'xyz@example.com', isActive: true },
+        { email: 'abc@example.com', is_active: true },
+        { email: 'def@example.com', is_active: true },
+        { email: 'xyz@example.com', is_active: true },
       ],
       presence: {
         'abc@example.com': {
@@ -90,7 +95,7 @@ describe('getUsersStatusActive', () => {
         },
       },
     });
-    const expectedUsers = [{ email: 'abc@example.com', isActive: true }];
+    const expectedUsers = [{ email: 'abc@example.com', is_active: true }];
 
     const actualUser = getUsersStatusActive(state);
 
@@ -102,9 +107,9 @@ describe('getUsersStatusIdle', () => {
   test('returns users with presence status set as "idle"', () => {
     const state = deepFreeze({
       users: [
-        { email: 'abc@example.com', isActive: true },
-        { email: 'def@example.com', isActive: true },
-        { email: 'xyz@example.com', isActive: true },
+        { email: 'abc@example.com', is_active: true },
+        { email: 'def@example.com', is_active: true },
+        { email: 'xyz@example.com', is_active: true },
       ],
       presence: {
         'abc@example.com': {
@@ -120,8 +125,8 @@ describe('getUsersStatusIdle', () => {
       },
     });
     const expectedUsers = [
-      { email: 'abc@example.com', isActive: true },
-      { email: 'def@example.com', isActive: true },
+      { email: 'abc@example.com', is_active: true },
+      { email: 'def@example.com', is_active: true },
     ];
 
     const actualUser = getUsersStatusIdle(state);
@@ -134,9 +139,9 @@ describe('getUsersStatusOffline', () => {
   test('returns users with presence status set as "offline"', () => {
     const state = deepFreeze({
       users: [
-        { email: 'abc@example.com', isActive: true },
-        { email: 'def@example.com', isActive: true },
-        { email: 'xyz@example.com', isActive: true },
+        { email: 'abc@example.com', is_active: true },
+        { email: 'def@example.com', is_active: true },
+        { email: 'xyz@example.com', is_active: true },
       ],
       presence: {
         'abc@example.com': {
@@ -157,9 +162,9 @@ describe('getUsersStatusOffline', () => {
       },
     });
     const expectedUsers = [
-      { email: 'abc@example.com', isActive: true },
-      { email: 'def@example.com', isActive: true },
-      { email: 'xyz@example.com', isActive: true },
+      { email: 'abc@example.com', is_active: true },
+      { email: 'def@example.com', is_active: true },
+      { email: 'xyz@example.com', is_active: true },
     ];
 
     const actualUser = getUsersStatusOffline(state);
@@ -168,7 +173,56 @@ describe('getUsersStatusOffline', () => {
   });
 });
 
-describe('getUsersByEmail', () => {
+describe('getActiveUsersAndBots', () => {
+  test('return users, bots, does not include inactive users', () => {
+    const state = deepFreeze({
+      users: [{ email: 'abc@example.com' }],
+      realm: {
+        crossRealmBots: [{ email: 'def@example.com' }],
+        nonActiveUsers: [{ email: 'xyz@example.com' }],
+      },
+    });
+    const expectedResult = [{ email: 'abc@example.com' }, { email: 'def@example.com' }];
+
+    const result = getActiveUsersAndBots(state);
+
+    expect(result).toEqual(expectedResult);
+  });
+});
+
+describe('getAllUsersAndBots', () => {
+  test('return users, bots, and inactive users', () => {
+    const state = deepFreeze({
+      users: [{ email: 'abc@example.com' }],
+      realm: {
+        crossRealmBots: [{ email: 'def@example.com' }],
+        nonActiveUsers: [{ email: 'xyz@example.com' }],
+      },
+    });
+    const expectedResult = [
+      { email: 'abc@example.com' },
+      { email: 'xyz@example.com' },
+      { email: 'def@example.com' },
+    ];
+
+    const result = getAllUsersAndBots(state);
+
+    expect(result).toEqual(expectedResult);
+  });
+
+  test('empty state does not cause an exception, returns an empty list', () => {
+    const state = deepFreeze({
+      realm: {},
+    });
+    const expectedResult = [];
+
+    const result = getAllUsersAndBots(state);
+
+    expect(result).toEqual(expectedResult);
+  });
+});
+
+describe('getAllUsersAndBotsByEmail', () => {
   test('return users mapped by their email', () => {
     const state = deepFreeze({
       users: [
@@ -176,6 +230,10 @@ describe('getUsersByEmail', () => {
         { email: 'def@example.com' },
         { email: 'xyz@example.com' },
       ],
+      realm: {
+        crossRealmBots: [],
+        nonActiveUsers: [],
+      },
     });
     const expectedResult = {
       'abc@example.com': { email: 'abc@example.com' },
@@ -183,7 +241,26 @@ describe('getUsersByEmail', () => {
       'xyz@example.com': { email: 'xyz@example.com' },
     };
 
-    const result = getUsersByEmail(state);
+    const result = getAllUsersAndBotsByEmail(state);
+
+    expect(result).toEqual(expectedResult);
+  });
+
+  test('return users, bots, and inactive users mapped by their email', () => {
+    const state = deepFreeze({
+      users: [{ email: 'abc@example.com' }],
+      realm: {
+        crossRealmBots: [{ email: 'def@example.com' }],
+        nonActiveUsers: [{ email: 'xyz@example.com' }],
+      },
+    });
+    const expectedResult = {
+      'abc@example.com': { email: 'abc@example.com' },
+      'def@example.com': { email: 'def@example.com' },
+      'xyz@example.com': { email: 'xyz@example.com' },
+    };
+
+    const result = getAllUsersAndBotsByEmail(state);
 
     expect(result).toEqual(expectedResult);
   });
@@ -193,15 +270,15 @@ describe('getUsersById', () => {
   test('return users mapped by their Id', () => {
     const state = deepFreeze({
       users: [
-        { id: 1, email: 'abc@example.com' },
-        { id: 2, email: 'def@example.com' },
-        { id: 3, email: 'xyz@example.com' },
+        { user_id: 1, email: 'abc@example.com' },
+        { user_id: 2, email: 'def@example.com' },
+        { user_id: 3, email: 'xyz@example.com' },
       ],
     });
     const expectedResult = {
-      1: { id: 1, email: 'abc@example.com' },
-      2: { id: 2, email: 'def@example.com' },
-      3: { id: 3, email: 'xyz@example.com' },
+      1: { user_id: 1, email: 'abc@example.com' },
+      2: { user_id: 2, email: 'def@example.com' },
+      3: { user_id: 3, email: 'xyz@example.com' },
     };
 
     const result = getUsersById(state);

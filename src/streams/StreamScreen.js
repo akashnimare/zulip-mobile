@@ -1,65 +1,72 @@
 /* @flow */
-import React, { PureComponent } from 'react';
+import { connect } from 'react-redux';
 
-import type { Actions, Stream, Subscription } from '../types';
-import connectWithActions from '../connectWithActions';
+import React, { PureComponent } from 'react';
+import { View } from 'react-native';
+
+import type { Context, Dispatch, Stream, Subscription } from '../types';
 import { OptionRow, Screen, ZulipButton, OptionDivider } from '../common';
-import { getStreams, getSubscriptions } from '../selectors';
-import { NULL_STREAM, NULL_SUBSCRIPTION } from '../nullObjects';
+import { getIsAdmin, getStreamFromParams, getSubscriptionFromParams } from '../selectors';
 import StreamCard from './StreamCard';
+import {
+  doToggleMuteStream,
+  doTogglePinStream,
+  navigateToEditStream,
+  navigateToTopicList,
+  toggleStreamNotification,
+  navigateToStreamSubscribers,
+} from '../actions';
 
 type Props = {
-  actions: Actions,
-  navigation: Object,
-  streams: Stream[],
-  subscriptions: Subscription[],
+  dispatch: Dispatch,
+  isAdmin: boolean,
+  stream: Stream,
+  subscription: Subscription,
 };
 
 class StreamScreen extends PureComponent<Props> {
+  context: Context;
   props: Props;
 
   static contextTypes = {
     styles: () => null,
   };
-
   handleTogglePinStream = (newValue: boolean) => {
-    const { actions, navigation } = this.props;
-    const { streamId } = navigation.state.params;
-    actions.doTogglePinStream(streamId, newValue);
+    const { dispatch, stream } = this.props;
+    dispatch(doTogglePinStream(stream.stream_id, newValue));
   };
 
   handleToggleMuteStream = (newValue: boolean) => {
-    const { actions, navigation } = this.props;
-    const { streamId } = navigation.state.params;
-    actions.doToggleMuteStream(streamId, newValue);
+    const { dispatch, stream } = this.props;
+    dispatch(doToggleMuteStream(stream.stream_id, newValue));
   };
 
   handleTopics = () => {
-    const { actions, navigation } = this.props;
-    actions.navigateToTopicList(navigation.state.params.streamId);
+    const { dispatch, stream } = this.props;
+    dispatch(navigateToTopicList(stream.stream_id));
   };
 
   handleEdit = () => {
-    const { actions, navigation } = this.props;
-    actions.navigateToEditStream(navigation.state.params.streamId);
+    const { dispatch, stream } = this.props;
+    dispatch(navigateToEditStream(stream.stream_id));
+  };
+
+  handleEditSubscribers = () => {
+    const { dispatch, stream } = this.props;
+    dispatch(navigateToStreamSubscribers(stream.stream_id));
   };
 
   toggleStreamPushNotification = () => {
-    const { subscriptions, navigation, actions } = this.props;
-    const { streamId } = navigation.state.params;
-    const subscription = subscriptions.find(x => x.stream_id === streamId) || NULL_SUBSCRIPTION;
-    actions.toggleStreamNotification(streamId, !subscription.push_notifications);
+    const { dispatch, subscription, stream } = this.props;
+    dispatch(toggleStreamNotification(stream.stream_id, !subscription.push_notifications));
   };
 
   render() {
-    const { streams, subscriptions, navigation } = this.props;
-    const { streamId } = navigation.state.params;
-    const stream = streams.find(x => x.stream_id === streamId) || NULL_STREAM;
-    const subscription = subscriptions.find(x => x.stream_id === streamId) || NULL_SUBSCRIPTION;
+    const { isAdmin, stream, subscription } = this.props;
     const { styles } = this.context;
 
     return (
-      <Screen title="Stream" padding>
+      <Screen title="Stream">
         <StreamCard stream={stream} subscription={subscription} />
         <OptionRow
           label="Pinned"
@@ -68,7 +75,7 @@ class StreamScreen extends PureComponent<Props> {
         />
         <OptionRow
           label="Muted"
-          defaultValue={stream.in_home_view === false}
+          defaultValue={subscription.in_home_view === false}
           onValueChange={this.handleToggleMuteStream}
         />
         <OptionRow
@@ -78,14 +85,26 @@ class StreamScreen extends PureComponent<Props> {
           customStyle={this.context.styles.backgroundColor}
         />
         <OptionDivider />
-        <ZulipButton style={styles.marginTop} text="Topics" onPress={this.handleTopics} />
-        <ZulipButton style={styles.marginTop} text="Edit" onPress={this.handleEdit} />
+        <View style={styles.padding}>
+          <ZulipButton text="Topics" onPress={this.handleTopics} />
+          {isAdmin && (
+            <ZulipButton style={styles.marginTop} text="Edit" onPress={this.handleEdit} />
+          )}
+          {isAdmin && (
+            <ZulipButton
+              style={styles.marginTop}
+              text="Add subscribers"
+              onPress={this.handleEditSubscribers}
+            />
+          )}
+        </View>
       </Screen>
     );
   }
 }
 
-export default connectWithActions(state => ({
-  streams: getStreams(state),
-  subscriptions: getSubscriptions(state),
+export default connect(state => ({
+  isAdmin: getIsAdmin(state),
+  stream: getStreamFromParams(state),
+  subscription: getSubscriptionFromParams(state),
 }))(StreamScreen);

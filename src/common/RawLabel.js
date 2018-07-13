@@ -2,13 +2,21 @@
 import React, { PureComponent } from 'react';
 import { Text } from 'react-native';
 
-import type { StyleObj } from '../types';
+import type { Style } from '../types';
 
 type Props = {
   text: string,
-  style?: StyleObj,
+  style?: Style,
 };
 
+/**
+ * A component that on top of a standard Text component
+ * provides ensures consistent styling for the default and night themes.
+ * Unlike `Label` it does not translate its contents.
+ *
+ * @prop text - Main component to be rendered.
+ * @prop [style] - Style object applied to the Text component.
+ */
 export default class RawLabel extends PureComponent<Props> {
   static contextTypes = {
     styles: () => null,

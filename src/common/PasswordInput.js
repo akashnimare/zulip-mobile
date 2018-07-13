@@ -2,24 +2,29 @@
 import React, { PureComponent } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 
-import type { LocalizableText } from '../types';
+import type { Context, LocalizableText, Style } from '../types';
 import Input from './Input';
 import { BRAND_COLOR } from '../styles';
 import { Label, Touchable } from '../common';
 
 const componentStyles = StyleSheet.create({
-  button: {
+  passwordInput: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  showPasswordButton: {
     position: 'absolute',
     right: 0,
     alignItems: 'center',
-    padding: 10,
+    padding: 8,
   },
-  buttonText: {
+  showPasswordButtonText: {
     color: BRAND_COLOR,
   },
 });
 
 type Props = {
+  style?: Style,
   placeholder: LocalizableText,
 };
 
@@ -27,16 +32,18 @@ type State = {
   isHidden: boolean,
 };
 
+/**
+ * A password input component using Input internally.
+ * Provides a 'show'/'hide' button to show the password.
+ *
+ * @prop [style] - Style applied to the TextInput component.
+ * @prop [placeholder] - Text to be shown when no value is entered.
+ */
 export default class PasswordInput extends PureComponent<Props, State> {
-  static contextTypes = {
-    styles: () => null,
-  };
-
-  textInput: TextInput;
-
+  context: Context;
   props: Props;
-
   state: State;
+  textInput: TextInput;
 
   state = {
     isHidden: true,
@@ -49,19 +56,20 @@ export default class PasswordInput extends PureComponent<Props, State> {
   };
 
   render() {
-    const { styles } = this.context;
+    const { style } = this.props;
     const { isHidden } = this.state;
 
     return (
-      <View style={styles.row}>
+      <View style={style}>
         <Input
           {...this.props}
+          style={componentStyles.passwordInput}
           secureTextEntry={isHidden}
           autoCorrect={false}
           autoCapitalize="none"
         />
-        <Touchable style={componentStyles.button} onPress={this.handleShow}>
-          <Label style={componentStyles.buttonText} text={isHidden ? 'show' : 'hide'} />
+        <Touchable style={componentStyles.showPasswordButton} onPress={this.handleShow}>
+          <Label style={componentStyles.showPasswordButtonText} text={isHidden ? 'show' : 'hide'} />
         </Touchable>
       </View>
     );

@@ -1,42 +1,54 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { ActivityIndicator, View, StyleSheet, FlatList } from 'react-native';
 
-import type { Actions, Auth } from '../types';
-import connectWithActions from '../connectWithActions';
+import type { Auth, Context, DevUser, Dispatch } from '../types';
 import { ErrorMsg, Label, Screen, ZulipButton } from '../common';
-import { devGetEmails, devFetchApiKey } from '../api';
+import { devListUsers, devFetchApiKey } from '../api';
 import { getAuth } from '../selectors';
+import { loginSuccess } from '../actions';
 
-const inlineStyles = StyleSheet.create({
+const componentStyles = StyleSheet.create({
   accountItem: { height: 10 },
   heading: { flex: 0 },
+  heading2: {
+    fontSize: 20,
+  },
+  container: {
+    flex: 1,
+    padding: 16,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'stretch',
+  },
 });
 
 type Props = {
-  actions: Actions,
   auth: Auth,
+  dispatch: Dispatch,
 };
 
 type State = {
   progress: boolean,
-  directAdmins: string[],
-  directUsers: string[],
+  directAdmins: DevUser[],
+  directUsers: DevUser[],
   error: string,
 };
 
 class DevAuthScreen extends PureComponent<Props, State> {
-  static contextTypes = {
-    styles: () => null,
-  };
-
+  context: Context;
   props: Props;
-
   state: State = {
     progress: false,
     directAdmins: [],
     directUsers: [],
     error: '',
+  };
+
+  static contextTypes = {
+    styles: () => null,
   };
 
   componentDidMount = () => {
@@ -45,7 +57,7 @@ class DevAuthScreen extends PureComponent<Props, State> {
 
     (async () => {
       try {
-        const [directAdmins, directUsers] = await devGetEmails(auth);
+        const [directAdmins, directUsers] = await devListUsers(auth);
 
         this.setState({ directAdmins, directUsers, progress: false });
       } catch (err) {
@@ -63,7 +75,7 @@ class DevAuthScreen extends PureComponent<Props, State> {
 
     try {
       const apiKey = await devFetchApiKey(auth, email);
-      this.props.actions.loginSuccess(auth.realm, email, apiKey);
+      this.props.dispatch(loginSuccess(auth.realm, email, apiKey));
       this.setState({ progress: false });
     } catch (err) {
       this.setState({ progress: false, error: err.message });
@@ -76,24 +88,28 @@ class DevAuthScreen extends PureComponent<Props, State> {
 
     return (
       <Screen title="Pick a dev account">
-        <View style={styles.container}>
+        <View style={componentStyles.container}>
           {progress && <ActivityIndicator />}
           {!!error && <ErrorMsg error={error} />}
           <Label
-            style={[styles.field, styles.heading2, inlineStyles.heading]}
+            style={[styles.field, componentStyles.heading2, componentStyles.heading]}
             text="Administrators"
           />
-          {directAdmins.map(email => (
-            <ZulipButton key={email} text={email} onPress={() => this.tryDevLogin(email)} />
+          {directAdmins.map(admin => (
+            <ZulipButton
+              key={admin.email}
+              text={admin.email}
+              onPress={() => this.tryDevLogin(admin.email)}
+            />
           ))}
           <Label
-            style={[styles.field, styles.heading2, inlineStyles.heading]}
+            style={[styles.field, componentStyles.heading2, componentStyles.heading]}
             text="Normal users"
           />
           <FlatList
-            data={directUsers}
+            data={directUsers.map(user => user.email)}
             keyExtractor={(item, index) => item}
-            ItemSeparatorComponent={() => <View style={inlineStyles.accountItem} />}
+            ItemSeparatorComponent={() => <View style={componentStyles.accountItem} />}
             renderItem={({ item }) => (
               <ZulipButton
                 key={item}
@@ -109,6 +125,6 @@ class DevAuthScreen extends PureComponent<Props, State> {
   }
 }
 
-export default connectWithActions(state => ({
+export default connect(state => ({
   auth: getAuth(state),
 }))(DevAuthScreen);

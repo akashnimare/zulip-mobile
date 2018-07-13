@@ -1,6 +1,8 @@
 /* @flow */
-import type { Action } from './actionTypes';
-import type { ApiUser } from './api/apiTypes';
+import type { Dispatch as ReduxDispatch } from 'redux';
+import type { IntlShape } from 'react-intl';
+
+import type { AppStyles } from './styles/theme';
 
 export type { ChildrenArray } from 'react';
 
@@ -10,9 +12,11 @@ export type MapStateToProps = any; // { MapStateToProps } from 'react-redux';
 export type * from './actionTypes';
 export type * from './api/apiTypes';
 
-export type StyleObj = any;
-export type Dispatch = any;
-// export type { Dispatch } from 'redux';
+export type ThunkDispatch<T> = ((Dispatch, GetState) => T) => T;
+
+export type Dispatch = ReduxDispatch<*> & ThunkDispatch<*>;
+
+export type Style = boolean | number | Array<Style> | ?{ [string]: any };
 
 export type Orientation = 'LANDSCAPE' | 'PORTRAIT';
 
@@ -21,6 +25,15 @@ export type Dimensions = {
   left: number,
   right: number,
   top: number,
+};
+
+export type ObjectWithId = {
+  id: number,
+  [key: string]: any,
+};
+
+export type ObjectsMappedById = {
+  [key: number]: ObjectWithId,
 };
 
 export type Auth = {
@@ -36,67 +49,138 @@ export type InputSelectionType = {
 
 export type Account = Auth;
 
-export type ImageResource = any; /* {
-  uri: string,
-} */
-
-export type ReactionType = any; /* {
+/**
+ * An emoji reaction to a message, in minimal form.
+ *
+ * See also EventReaction, which carries additional properties computed from
+ * these.
+ */
+export type SlimEventReaction = {
   emoji_name: string,
   user: any,
-  name: string,
+};
+
+/**
+ * An emoji reaction to a message.
+ *
+ * See also SlimEventReaction, which contains the minimal subset of these
+ * properties needed to compute the rest.
+ */
+export type EventReaction = {
+  emoji_code: string,
+  emoji_name: string,
+  reaction_type: string,
+  user: any,
+};
+
+/** An aggregate of all the reactions with one emoji to one message. */
+export type AggregatedReaction = {
+  code: string,
   count: number,
+  name: string,
   selfReacted: boolean,
-}; */
+  type: string,
+};
+
+export type Recipient = any; /* {
+   email: string,
+   full_name: string,
+   id: number,
+   is_mirror_dummy: boolean,
+   short_name: string,
+ }; */
+
+export type MessageEdit = {
+  prev_content?: string,
+  prev_rendered_content?: string,
+  prev_rendered_content_version?: number,
+  prev_subject?: string,
+  timestamp: number,
+  user_id: number,
+};
 
 export type Message = {
-  avatar_url: string,
+  avatar_url: ?string,
   client: 'website' | 'ZulipMobile',
   content: string,
   content_type: 'text/html' | 'text/markdown',
-  display_recipient: any,
-  edit_history: any[],
-  flags: [],
+  display_recipient: any, // string | Recipient[],
+  edit_history: MessageEdit[],
+  flags: string[],
   gravatar_hash: string,
   id: number,
   isOutbox: boolean,
+  is_me_message: boolean,
   match_content?: string,
   match_subject?: string,
-  reactions: ReactionType[],
+  reactions: SlimEventReaction[],
   recipient_id: number,
   sender_domain: string,
   sender_email: string,
   sender_full_name: string,
   sender_id: number,
+  sender_realm_str: string,
   sender_short_name: string,
+  stream_id: number,
   subject: string,
-  subject_links: [],
+  subject_links: string[],
+  submessages: Message[],
   timestamp: number,
   type: 'stream' | 'private',
 };
 
-export type MessageState = {
+export type MessagesState = {
   [narrow: string]: Message[],
 };
 
 export type UserStatus = 'active' | 'idle' | 'offline';
 
 export type User = {
-  avatarUrl: string,
+  avatar_url: string,
+  bot_type?: number,
+  bot_owner?: string,
   email: string,
-  fullName: string,
+  full_name: string,
+  is_admin: boolean,
+  is_active: boolean,
+  is_bot: boolean,
+  profile_data?: Object,
+  timezone: string,
+  user_id: number,
+};
+
+export type UserIdMap = {
+  [userId: string]: User,
+};
+
+export type UserGroup = {
+  description: string,
   id: number,
-  isActive: boolean,
-  isAdmin: boolean,
-  isBot: boolean,
+  members: number[],
+  name: string,
+};
+
+export type DevUser = {
+  realm_uri: string,
+  email: string,
+};
+
+export type PresenceAggregated = {
+  client: string,
+  status: UserStatus,
+  timestamp: number,
+};
+
+export type ClientPresence = {
+  status: UserStatus,
+  timestamp: number,
+  client: string,
+  pushable: boolean,
 };
 
 export type Presence = {
-  pushable: boolean,
-  aggregated: {
-    client: string,
-    status: UserStatus,
-    timestamp: number,
-  },
+  aggregated: PresenceAggregated,
+  [client: string]: ClientPresence,
 };
 
 export type CaughtUp = {
@@ -114,18 +198,24 @@ export type Stream = {
   description: string,
   name: string,
   invite_only: boolean,
+};
+
+export type StreamsState = Stream[];
+
+export type Subscription = Stream & {
+  color: string,
   in_home_view: boolean,
   pin_to_top: boolean,
-  color: string,
+  audible_notifications: boolean,
+  desktop_notifications: boolean,
+  email_address: string,
+  push_notifications: boolean,
+  is_old_stream: boolean,
+  push_notifications: boolean,
+  stream_weekly_traffic: number,
 };
 
-export type ClientPresence = {
-  [key: string]: Presence,
-};
-
-export type Presences = {
-  [key: string]: ClientPresence,
-};
+export type SubscriptionsState = Subscription[];
 
 export type HeartbeatEvent = {
   type: 'heartbeat',
@@ -141,7 +231,7 @@ export type PresenceEvent = {
   type: 'message',
   id: number,
   email: string,
-  presence: any,
+  presence: { [client: string]: ClientPresence },
   server_timestamp: number,
 };
 
@@ -172,39 +262,13 @@ export type NarrowElement = {
 
 export type Narrow = NarrowElement[];
 
-export type Recipient = {
-  display_recipient: string,
-  subject: string,
-  email: string,
-  id: number,
-};
-
-export type ApiResponse = {
-  result: string,
-  msg: string,
-};
-
 export type EditMessage = {
   id: number,
   content: string,
   topic: string,
 };
 
-export type AuthenticationMethods = {
-  dev: boolean,
-  email: boolean,
-  github: boolean,
-  google: boolean,
-  ldap: boolean,
-  password: boolean,
-};
-export type ServerSettings = {
-  authentication_methods: AuthenticationMethods,
-  realm_icon: string,
-  realm_name: string,
-};
-
-export type AccountState = Account[];
+export type AccountsState = Account[];
 
 export type Debug = {
   highlightUnreadMessages: boolean,
@@ -224,9 +288,13 @@ export type SessionState = {
   debug: Debug,
 };
 
-export type CaughtUpState = Object;
+export type CaughtUpState = {
+  [narrow: string]: CaughtUp,
+};
 
-export type FetchingState = Object;
+export type FetchingState = {
+  [narrow: string]: Fetching,
+};
 
 export type FlagMap = {
   [number]: boolean,
@@ -245,7 +313,7 @@ export type LoadingState = {
 };
 
 export type MuteTuple = [string, string];
-export type MuteState = any; // MuteTuple[]
+export type MuteState = MuteTuple[];
 
 export type NavigationState = {
   index: number,
@@ -259,25 +327,69 @@ export type NavigationState = {
 
 export type RealmFilter = [string, string, number];
 
+export type RealmEmojiType = {
+  author: {
+    email: string,
+    full_name: string,
+    id: number,
+  },
+  deactivated: boolean,
+  id: number,
+  name: string,
+  source_url: string,
+  // This prevents accidentally using this type as a map.
+  // See https://github.com/facebook/flow/issues/4257#issuecomment-321951793
+  [any]: mixed,
+};
+
+export type RealmEmojiState = {
+  [id: string]: RealmEmojiType,
+};
+
+export type RealmBot = {
+  email: string,
+  full_name: string,
+  is_admin: boolean,
+  is_bot: true,
+  user_id: number,
+};
+
 export type RealmState = {
   twentyFourHourTime: boolean,
+  canCreateStreams: boolean,
+  crossRealmBots: RealmBot[],
+  nonActiveUsers: User[],
   pushToken: {
     token: string,
     msg: string,
     result: string,
   },
   filters: RealmFilter[],
-  emoji: Object,
+  emoji: RealmEmojiState,
+  isAdmin: boolean,
 };
 
-export type TopicDetails = any; /* {
+export type Topic = {
   name: string,
   max_id: number,
-} */
+};
 
-export type TopicsState = any; // TopicDetails[];
+export type TopicExtended = Topic & {
+  isMuted: boolean,
+  unreadCount: number,
+};
+
+export type TopicsState = {
+  [number]: Topic[],
+};
 
 export type ThemeType = 'default' | 'night';
+
+export type Context = {
+  intl: IntlShape,
+  styles: AppStyles,
+  theme: ThemeType,
+};
 
 export type StatusBarStyle = 'light-content' | 'dark-content';
 
@@ -290,51 +402,71 @@ export type SettingsState = {
   streamNotification: boolean,
 };
 
-export type StreamsState = any; // [];
+export type TypingState = {
+  [normalizedRecipients: string]: {
+    time: number,
+    userIds: number[],
+  },
+};
 
-export type SubscriptionsState = any; // [];
-
-export type TypingState = Object;
+export type Outbox = Message & {
+  markdownContent: string,
+  narrow: Narrow,
+};
 
 export type StreamUnreadItem = {
-  stream_id: string,
+  stream_id: number,
   topic: string,
   unread_message_ids: number[],
 };
 
-export type Outbox = any; /* {
-  content: string,
-  markdownContent: string,
-  timestamp: number,
-  id: number,
-  sender_full_name: string,
-  email: string,
-  avatar_url: string,
-  type: 'stream' | 'private',
-  outbox: true,
-  narrow: Narrow,
-} */
+export type HuddlesUnreadItem = {
+  user_ids_string: string,
+  unread_message_ids: number[],
+};
+
+export type PmsUnreadItem = {
+  sender_id: number,
+  unread_message_ids: number[],
+};
 
 export type UnreadStreamsState = StreamUnreadItem[];
-export type UnreadHuddlesState = Object[];
-export type UnreadPmsState = Object[];
+export type UnreadHuddlesState = HuddlesUnreadItem[];
+export type UnreadPmsState = PmsUnreadItem[];
 export type UnreadMentionsState = number[];
 
-export type AlertWordsState = any;
-export type DraftsState = any;
-export type UsersState = any; // [];
-export type PresenceState = any;
+export type AlertWordsState = string[];
+
+export type DraftsState = {
+  [narrow: string]: string,
+};
+
+export type UsersState = User[];
+
+export type UserGroupsState = UserGroup[];
+
+export type PresenceState = {
+  [email: string]: Presence,
+};
+
 export type OutboxState = Outbox[];
 
+export type UnreadState = {
+  streams: UnreadStreamsState,
+  huddles: UnreadHuddlesState,
+  pms: UnreadPmsState,
+  mentions: UnreadMentionsState,
+};
+
 export type GlobalState = {
-  accounts: AccountState,
+  accounts: AccountsState,
   alertWords: AlertWordsState,
   caughtUp: CaughtUpState,
   drafts: DraftsState,
   fetching: FetchingState,
   flags: FlagsState,
   loading: LoadingState,
-  messages: MessageState,
+  messages: MessagesState,
   mute: MuteState,
   nav: NavigationState,
   outbox: OutboxState,
@@ -346,12 +478,8 @@ export type GlobalState = {
   subscriptions: SubscriptionsState,
   topics: TopicsState,
   typing: TypingState,
-  unread: {
-    streams: UnreadStreamsState,
-    huddles: UnreadHuddlesState,
-    pms: UnreadPmsState,
-    mentions: UnreadMentionsState,
-  },
+  unread: UnreadState,
+  userGroups: UserGroupsState,
   users: UsersState,
 };
 
@@ -359,36 +487,7 @@ export type MatchResult = Array<string> & { index: number, input: string };
 
 export type GetState = () => GlobalState;
 
-export type RealmEmojiState = any;
-
-export type RealmEmojiType = {
-  author: {
-    email: string,
-    full_name: string,
-    id: number,
-  },
-  deactivated: boolean,
-  source_url: string,
-};
-
 export type LocalizableText = any; // string | { text: string, values: Object };
-
-export type Subscription = {
-  audible_notifications: boolean,
-  color: string,
-  description: string,
-  desktop_notifications: boolean,
-  email_address: string,
-  in_home_view: boolean,
-  invite_only: boolean,
-  name: string,
-  pin_to_top: boolean,
-  push_notifications: boolean,
-  stream_id: number,
-  is_old_stream: boolean,
-  push_notifications: boolean,
-  stream_weekly_traffic: number,
-};
 
 export type RenderedTimeDescriptor = {
   type: 'time',
@@ -407,15 +506,15 @@ export type RenderedSectionDescriptor = any; /* {
   data: ItemDescriptor[],
 } */
 
-export type DraftState = any; // { string: string };
+export type DraftState = {
+  [narrow: string]: string,
+};
 
 export type TimingItemType = {
   text: string,
   start: number,
   end: number,
 };
-
-export type Reducer = (state: GlobalState, action: Action) => GlobalState;
 
 export type ActionSheetButtonType = any; /* {
   title: string,
@@ -440,33 +539,41 @@ export type UnreadStream = {
   unread: number,
 };
 
-export type PresenceAggregated = {
-  client: string,
-  status: string,
-  timestamp: number,
-};
-
-export type Notification = {
+export type NotificationCommon = {
   alert: string,
   content: string,
-  content_truncated: boolean,
-  event: 'message',
+  content_truncated: string, // boolean
   'google.message_id': string,
-  'google.sent_time': string,
+  'google.sent_time': number,
   'google.ttl': number,
-  realm_id: number,
-  recipient_type: 'private' | 'stream',
+  event: 'message',
+  realm_id: string, // string
   sender_avatar_url: string,
-  sender_id: number,
-  sender_email: string,
+  sender_email: string, // email
   sender_full_name: string,
+  sender_id: string,
   server: string,
-  stream: string,
-  topic: string,
-  time: number,
+  time: string,
   user: string,
   zulip_message_id: string,
 };
+
+export type NotificationPrivate = NotificationCommon & {
+  recipient_type: 'private',
+};
+
+export type NotificationGroup = NotificationCommon & {
+  pm_users: string, // comma separated ids
+  recipient_type: 'private',
+};
+
+export type NotificationStream = NotificationCommon & {
+  recipient_type: 'stream',
+  stream: string,
+  topic: string,
+};
+
+export type Notification = NotificationPrivate | NotificationGroup | NotificationStream;
 
 export type NamedUser = {
   id: number,
@@ -483,14 +590,6 @@ export type TabNavigationOptionsPropsType = {
   tintColor: string,
 };
 
-export type RealmBot = {
-  email: string,
-  full_name: string,
-  is_admin: boolean,
-  is_bot: true,
-  user_id: number,
-};
-
 export type NeverSubscribedStream = {
   description: string,
   invite_only: boolean,
@@ -499,18 +598,141 @@ export type NeverSubscribedStream = {
   stream_id: number,
 };
 
-export type InitialRealmData = {
+export type UnreadStreamData = {
+  key: string,
+  streamName: string,
+  isMuted: boolean,
+  isPrivate: boolean,
+  isPinned: boolean,
+  color: string,
+  unread: number,
+  data: Object[],
+};
+
+/**
+ * Summary of a PM conversation (either 1:1 or group PMs).
+ */
+export type PmConversationData = {
+  ids: string,
+  msgId: number,
+  recipients: string,
+  timestamp: number,
+  unread: number,
+};
+
+export type InitialDataBase = {
+  last_event_id: number,
+  msg: string,
+  queue_id: number,
+};
+
+export type InitialDataAlertWords = {
   alert_words: string[],
+};
+
+export type InitialDataMessage = {
+  max_message_id: number,
+};
+
+export type InitialDataMutedTopics = {
+  muted_topics: MuteTuple[],
+};
+
+export type InitialDataPresence = {
+  presences: PresenceState,
+};
+
+export type InitialDataRealm = {
+  max_icon_file_size: number,
+  realm_add_emoji_by_admins_only: boolean,
+  realm_allow_community_topic_editing: boolean,
+  realm_allow_edit_history: boolean,
+  realm_allow_message_deleting: boolean,
+  realm_allow_message_editing: boolean,
+  realm_authentication_methods: { GitHub: true, Email: true, Google: true },
+  realm_available_video_chat_providers: string[],
+  realm_bot_creation_policy: number,
+  realm_bot_domain: string,
+  realm_create_stream_by_admins_only: boolean,
+  realm_default_language: string,
+  realm_default_twenty_four_hour_time: boolean,
+  realm_description: string,
+  realm_disallow_disposable_email_addresses: boolean,
+  realm_email_auth_enabled: boolean,
+  realm_email_changes_disabled: boolean,
+  realm_google_hangouts_domain: string,
+  realm_icon_source: string,
+  realm_icon_url: string,
+  realm_inline_image_preview: boolean,
+  realm_inline_url_embed_preview: boolean,
+  realm_invite_by_admins_only: boolean,
+  realm_invite_required: boolean,
+  realm_is_zephyr_mirror_realm: boolean,
+  realm_mandatory_topics: boolean,
+  realm_message_content_delete_limit_seconds: number,
+  realm_message_content_edit_limit_seconds: number,
+  realm_message_retention_days: ?number,
+  realm_name: string,
+  realm_name_changes_disabled: boolean,
+  realm_notifications_stream_id: number,
+  realm_password_auth_enabled: boolean,
+  realm_presence_disabled: boolean,
+  realm_restricted_to_domain: boolean,
+  realm_send_welcome_emails: boolean,
+  realm_show_digest_email: boolean,
+  realm_signup_notifications_stream_id: number,
+  realm_uri: string,
+  realm_video_chat_provider: string,
+  realm_waiting_period_threshold: number,
+};
+
+export type InitialDataRealmEmoji = {
+  realm_emoji: RealmEmojiState,
+};
+
+export type InitialDataRealmFilters = {
+  realm_filters: RealmFilter[],
+};
+
+export type InitialDataRealmUser = {
   avatar_source: 'G',
   avatar_url: string,
   avatar_url_medium: string,
   can_create_streams: boolean,
   cross_realm_bots: RealmBot[],
-  default_desktop_notifications: boolean,
-  default_language: string,
   email: string,
+  enter_sends: boolean,
+  full_name: string,
+  is_admin: boolean,
+  realm_non_active_users: User[],
+  realm_users: User[],
+  user_id: number,
+};
+
+export type InitialDataRealmUserGroups = {
+  realm_user_groups: UserGroup[],
+};
+
+export type InitialDataSubscription = {
+  never_subscribed: NeverSubscribedStream[],
+  subscriptions: Subscription[],
+  unsubscribed: Subscription[],
+};
+
+export type InitialDataUpdateDisplaySettings = {
+  default_language: string,
   emojiset: string,
-  emojiset_choices: Object,
+  emojiset_choices: { [string]: string },
+  high_contrast_mode: boolean,
+  left_side_userlist: boolean,
+  night_mode: boolean,
+  timezone: string,
+  translate_emoticons: boolean,
+  twenty_four_hour_time: boolean,
+};
+
+export type InitialDataUpdateGlobalNotifications = {
+  default_desktop_notifications: boolean,
   enable_desktop_notifications: boolean,
   enable_digest_emails: boolean,
   enable_offline_email_notifications: boolean,
@@ -521,31 +743,12 @@ export type InitialRealmData = {
   enable_stream_email_notifications: boolean,
   enable_stream_push_notifications: boolean,
   enable_stream_sounds: boolean,
-  enter_sends: boolean,
-  full_name: string,
-  high_contrast_mode: boolean,
-  is_admin: boolean,
-  last_event_id: number,
-  left_side_userlist: boolean,
-  max_message_id: number,
   message_content_in_email_notifications: boolean,
-  msg: string,
-  muted_topics: MuteTuple[],
-  never_subscribed: NeverSubscribedStream[],
-  stream_weekly_traffic: number,
-  night_mode: boolean,
   pm_content_in_desktop_notifications: boolean,
-  presences: Presence[],
-  queue_id: number,
-  realm_emoji: Object, // map of RealmEmojiType
-  realm_filters: RealmFilter[],
   realm_name_in_notifications: boolean,
-  realm_non_active_users: ApiUser[],
-  realm_users: ApiUser[],
-  subscriptions: Subscription[],
-  timezone: string,
-  translate_emoticons: boolean,
-  twenty_four_hour_time: boolean,
+};
+
+export type InitialDataUpdateMessageFlags = {
   unread_msgs: {
     streams: UnreadStreamsState,
     huddles: UnreadHuddlesState,
@@ -553,6 +756,19 @@ export type InitialRealmData = {
     pms: UnreadPmsState,
     mentions: UnreadMentionsState,
   },
-  unsubscribed: Subscription[],
-  user_id: number,
 };
+
+export type InitialData = InitialDataBase &
+  InitialDataAlertWords &
+  InitialDataMessage &
+  InitialDataMutedTopics &
+  InitialDataPresence &
+  InitialDataRealm &
+  InitialDataRealmEmoji &
+  InitialDataRealmFilters &
+  InitialDataRealmUser &
+  InitialDataRealmUserGroups &
+  InitialDataSubscription &
+  InitialDataUpdateDisplaySettings &
+  InitialDataUpdateGlobalNotifications &
+  InitialDataUpdateMessageFlags;

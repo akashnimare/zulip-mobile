@@ -1,17 +1,18 @@
 /* @flow */
 import { Clipboard, Share } from 'react-native';
 import type {
-  Actions,
   Auth,
+  Dispatch,
   Message,
+  MuteTuple,
   Narrow,
-  ActionSheetButtonType,
+  Subscription,
   AuthGetStringAndMessageType,
 } from '../types';
 import { getNarrowFromMessage, isHomeNarrow, isSpecialNarrow } from '../utils/narrow';
 import { isTopicMuted } from '../utils/message';
 import {
-  getMessageById,
+  getMessageContentById,
   muteTopic,
   unmuteTopic,
   toggleMuteStream,
@@ -19,10 +20,11 @@ import {
   toggleMessageStarred,
 } from '../api';
 import { showToast } from '../utils/info';
+import { doNarrow, navigateBack, startEditMessage, deleteOutboxMessage } from '../actions';
 
 type ReplyOptionType = {
   message: Object,
-  actions: Actions,
+  dispatch: Dispatch,
   auth: Auth,
   currentRoute?: string,
   onReplySelect?: () => void,
@@ -36,14 +38,14 @@ type AuthAndMessageType = {
 type AuthMessageAndSubscriptionsType = {
   auth: Auth,
   message: Object,
-  subscriptions: any[],
+  subscriptions: Subscription[],
 };
 
 type ButtonProps = {
   auth: Auth,
   message: Object,
-  subscriptions: any[],
-  actions: Actions,
+  subscriptions: Subscription[],
+  dispatch: Dispatch,
   currentRoute?: string,
   onReplySelect?: () => void,
   getString: (value: string) => string,
@@ -53,8 +55,8 @@ type ExecuteActionSheetParams = {
   title: string,
   auth: Auth,
   message: Object,
-  subscriptions: any[],
-  actions: Actions,
+  subscriptions: Subscription[],
+  dispatch: Dispatch,
   header?: boolean,
   currentRoute?: string,
   onReplySelect?: () => void,
@@ -72,15 +74,15 @@ type ConstructActionButtonsType = {
 
 type ConstructHeaderActionButtonsType = {
   message: Message,
-  subscriptions: any[],
-  mute: any[],
+  subscriptions: Subscription[],
+  mute: MuteTuple[],
   getString: (value: string) => string,
 };
 
-type MessageAuthAndActions = {
+type MessageAuthAndDispatch = {
   message: Message,
   auth: Auth,
-  actions: Actions,
+  dispatch: Dispatch,
 };
 
 type AuthMessageAndNarrow = {
@@ -91,31 +93,33 @@ type AuthMessageAndNarrow = {
 
 const isAnOutboxMessage = (message: Message): boolean => message.isOutbox;
 
-const reply = ({ message, actions, auth, currentRoute, onReplySelect }: ReplyOptionType) => {
+const reply = ({ message, dispatch, auth, currentRoute, onReplySelect }: ReplyOptionType) => {
   if (currentRoute === 'search') {
-    actions.navigateBack();
+    dispatch(navigateBack());
   }
-  actions.doNarrow(getNarrowFromMessage(message, auth.email), message.id);
-  if (onReplySelect) onReplySelect(); // focus message input
+  dispatch(doNarrow(getNarrowFromMessage(message, auth.email), message.id));
+  if (onReplySelect) {
+    onReplySelect();
+  } // focus message input
 };
 
 const copyToClipboard = async ({ getString, auth, message }: AuthGetStringAndMessageType) => {
   const rawMessage = isAnOutboxMessage(message)
     ? message.markdownContent
-    : await getMessageById(auth, message.id);
+    : await getMessageContentById(auth, message.id);
   Clipboard.setString(rawMessage);
   showToast(getString('Message copied'));
 };
 
 const isSentMessage = ({ message }: { message: Message }): boolean => !isAnOutboxMessage(message);
 
-const editMessage = async ({ message, actions }: MessageAuthAndActions) => {
-  actions.startEditMessage(message.id, message.subject);
+const editMessage = async ({ message, dispatch }: MessageAuthAndDispatch) => {
+  dispatch(startEditMessage(message.id, message.subject));
 };
 
-const doDeleteMessage = async ({ auth, message, actions }: MessageAuthAndActions) => {
+const doDeleteMessage = async ({ auth, message, dispatch }: MessageAuthAndDispatch) => {
   if (isAnOutboxMessage(message)) {
-    actions.deleteOutboxMessage(message.timestamp);
+    dispatch(deleteOutboxMessage(message.timestamp));
   } else {
     deleteMessage(auth, message.id);
   }
@@ -165,7 +169,7 @@ const shareMessage = ({ message }) => {
   });
 };
 
-const skip = () => false;
+const skip = (...args) => false;
 
 type HeaderButtonType = {
   title: string,
@@ -175,11 +179,13 @@ type HeaderButtonType = {
 
 const resolveMultiple = (message, auth, narrow, functions) =>
   functions.every(f => {
-    if (!f({ message, auth, narrow })) return false;
+    if (!f({ message, auth, narrow })) {
+      return false;
+    }
     return true;
   });
 
-const actionSheetButtons: ActionSheetButtonType[] = [
+const actionSheetButtons /* ActionSheetButtonType[] */ = [
   { title: 'Reply', onPress: reply, onlyIf: isSentMessage },
   { title: 'Copy to clipboard', onPress: copyToClipboard, onlyIf: isNotDeleted },
   { title: 'Share', onPress: shareMessage, onlyIf: isNotDeleted },
@@ -195,7 +201,7 @@ const actionSheetButtons: ActionSheetButtonType[] = [
     onlyIf: ({ message, auth, narrow }) =>
       resolveMultiple(message, auth, narrow, [isSentMessage, isSentBySelf, isNotDeleted]),
   },
-  // If skip then covered in constructActionButtons
+  // If skip then covered in constructMessageActionButtons
   { title: 'Star message', onPress: starMessage, onlyIf: skip },
   { title: 'Unstar message', onPress: unstarMessage, onlyIf: skip },
   { title: 'Cancel', onPress: skip, onlyIf: skip },
@@ -236,7 +242,7 @@ export const constructHeaderActionButtons = ({
   return buttons;
 };
 
-export const constructActionButtons = ({
+export const constructMessageActionButtons = ({
   message,
   auth,
   narrow,
@@ -277,6 +283,9 @@ export const executeActionSheetAction = ({
     }
   }
 };
+
+export const constructActionButtons = (target: string) =>
+  target === 'header' ? constructHeaderActionButtons : constructMessageActionButtons;
 
 export type ShowActionSheetTypes = {
   options: Array<any>,

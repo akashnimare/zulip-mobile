@@ -1,9 +1,8 @@
 /* @flow */
 import isEqual from 'lodash.isequal';
-import escape from 'lodash.escape';
 import unescape from 'lodash.unescape';
 
-import type { Narrow, Message, Stream, User } from '../types';
+import type { Narrow, Message } from '../types';
 import { normalizeRecipients } from './message';
 
 export const homeNarrow: Narrow = [];
@@ -21,10 +20,10 @@ export const privateNarrow = (email: string): Narrow => [
 ];
 
 export const isPrivateNarrow = (narrow: Narrow): boolean =>
-  Array.isArray(narrow) &&
-  narrow.length === 1 &&
-  narrow[0].operator === 'pm-with' &&
-  narrow[0].operand.indexOf(',') === -1;
+  Array.isArray(narrow)
+  && narrow.length === 1
+  && narrow[0].operator === 'pm-with'
+  && narrow[0].operand.indexOf(',') === -1;
 
 export const groupNarrow = (emails: string[]): Narrow => [
   {
@@ -34,10 +33,10 @@ export const groupNarrow = (emails: string[]): Narrow => [
 ];
 
 export const isGroupNarrow = (narrow: Narrow): boolean =>
-  Array.isArray(narrow) &&
-  narrow.length === 1 &&
-  narrow[0].operator === 'pm-with' &&
-  narrow[0].operand.indexOf(',') >= 0;
+  Array.isArray(narrow)
+  && narrow.length === 1
+  && narrow[0].operator === 'pm-with'
+  && narrow[0].operand.indexOf(',') >= 0;
 
 export const isPrivateOrGroupNarrow = (narrow: Narrow): boolean =>
   Array.isArray(narrow) && narrow.length === 1 && narrow[0].operator === 'pm-with';
@@ -57,10 +56,10 @@ export const allPrivateNarrow = specialNarrow('private');
 export const allPrivateNarrowStr = JSON.stringify(allPrivateNarrow);
 
 export const isAllPrivateNarrow = (narrow: Narrow): boolean =>
-  Array.isArray(narrow) &&
-  narrow.length === 1 &&
-  narrow[0].operator === 'is' &&
-  narrow[0].operand === 'private';
+  Array.isArray(narrow)
+  && narrow.length === 1
+  && narrow[0].operator === 'is'
+  && narrow[0].operand === 'private';
 
 export const streamNarrow = (stream: string): Narrow => [
   {
@@ -109,9 +108,9 @@ export const isMessageInNarrow = (message: Message, narrow: Narrow, ownEmail: st
   }
 
   if (
-    isTopicNarrow(narrow) &&
-    message.display_recipient === narrow[0].operand &&
-    message.subject === narrow[1].operand
+    isTopicNarrow(narrow)
+    && message.display_recipient === narrow[0].operand
+    && message.subject === narrow[1].operand
   ) {
     return true;
   }
@@ -131,10 +130,10 @@ export const isMessageInNarrow = (message: Message, narrow: Narrow, ownEmail: st
 };
 
 export const canSendToNarrow = (narrow: Narrow): boolean =>
-  isPrivateNarrow(narrow) ||
-  isGroupNarrow(narrow) ||
-  isStreamNarrow(narrow) ||
-  isTopicNarrow(narrow);
+  isPrivateNarrow(narrow)
+  || isGroupNarrow(narrow)
+  || isStreamNarrow(narrow)
+  || isTopicNarrow(narrow);
 
 export const getNarrowFromMessage = (message: Message, email: string) => {
   if (Array.isArray(message.display_recipient)) {
@@ -152,23 +151,7 @@ export const getNarrowFromMessage = (message: Message, email: string) => {
   return streamNarrow(message.display_recipient);
 };
 
-export const validateNarrow = (narrow: Narrow, streams: Stream[], users: User[]): boolean => {
-  if (isStreamOrTopicNarrow(narrow)) {
-    // check if stream is not outdated
-    return streams && streams.find(s => s.name === narrow[0].operand) !== undefined;
-  }
-
-  if (isPrivateNarrow(narrow)) {
-    // check user account is not deactivited
-    return users && users.find(u => u.email === narrow[0].operand) !== undefined;
-  }
-
-  return true;
-};
-
 export const isSameNarrow = (narrow1: Narrow, narrow2: Narrow): boolean =>
   Array.isArray(narrow1) && Array.isArray(narrow2) && isEqual(narrow1, narrow2);
-
-export const stringifyNarrow = (narrow: Narrow): string => escape(JSON.stringify(narrow));
 
 export const parseNarrowString = (narrowStr: string): Narrow => JSON.parse(unescape(narrowStr));

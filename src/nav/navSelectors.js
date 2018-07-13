@@ -7,6 +7,7 @@ import config from '../config';
 import { getNav, getAccounts } from '../directSelectors';
 import { navigateToChat } from './navActions';
 import { getAuth } from '../account/accountSelectors';
+import { getUsersById } from '../users/userSelectors';
 import AppNavigator from './AppNavigator';
 import { getNarrowFromNotificationData } from '../utils/notificationsCommon';
 
@@ -27,8 +28,8 @@ export const getSameRoutesAndParamsCount = createSelector(getNav, nav => {
   let i = nav.routes.length - 1;
   while (i >= 0) {
     if (
-      nav.routes[i].routeName !== nav.routes[nav.routes.length - 1].routeName ||
-      !isEqual(nav.routes[i].params, nav.routes[nav.routes.length - 1].params)
+      nav.routes[i].routeName !== nav.routes[nav.routes.length - 1].routeName
+      || !isEqual(nav.routes[i].params, nav.routes[nav.routes.length - 1].params)
     ) {
       break;
     }
@@ -38,7 +39,9 @@ export const getSameRoutesAndParamsCount = createSelector(getNav, nav => {
 });
 
 export const getPreviousDifferentRoute = createSelector(getNav, nav => {
-  if (nav.routes.length < 2) return '';
+  if (nav.routes.length < 2) {
+    return '';
+  }
 
   let i = nav.routes.length - 2;
   while (i >= 0 && nav.routes[i].routeName === nav.routes[nav.routes.length - 1].routeName) {
@@ -49,13 +52,15 @@ export const getPreviousDifferentRoute = createSelector(getNav, nav => {
 });
 
 export const getPreviousDifferentRouteAndParams = createSelector(getNav, nav => {
-  if (nav.routes.length < 2) return '';
+  if (nav.routes.length < 2) {
+    return '';
+  }
 
   let i = nav.routes.length - 2;
   while (
-    i >= 0 &&
-    nav.routes[i].routeName === nav.routes[nav.routes.length - 1].routeName &&
-    isEqual(nav.routes[i].params, nav.routes[nav.routes.length - 1].params)
+    i >= 0
+    && nav.routes[i].routeName === nav.routes[nav.routes.length - 1].routeName
+    && isEqual(nav.routes[i].params, nav.routes[nav.routes.length - 1].params)
   ) {
     i--;
   }
@@ -72,9 +77,10 @@ export const getInitialNavState = createSelector(
   getNav,
   getAccounts,
   getAuth,
-  (nav, accounts, auth) => {
+  getUsersById,
+  (nav, accounts, auth, usersById) => {
     if (!auth.apiKey) {
-      return getStateForRoute(accounts && accounts.length > 1 ? 'account' : 'realm');
+      return getStateForRoute(accounts && accounts.length > 1 ? 'account' : 'welcome');
     }
 
     const state =
@@ -86,7 +92,7 @@ export const getInitialNavState = createSelector(
       return state;
     }
 
-    const narrow = getNarrowFromNotificationData(config.startup.notification);
+    const narrow = getNarrowFromNotificationData(config.startup.notification, usersById);
     return AppNavigator.router.getStateForAction(navigateToChat(narrow), state);
   },
 );

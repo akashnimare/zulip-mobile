@@ -1,9 +1,10 @@
 /* @flow */
+import { connect } from 'react-redux';
+
 import React, { PureComponent } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import type { Narrow } from '../types';
-import connectWithActions from '../connectWithActions';
 import { getIfNoMessages, getShowMessagePlaceholders } from '../selectors';
 import { Label } from '../common';
 
@@ -15,6 +16,7 @@ import {
   isStreamNarrow,
   isTopicNarrow,
   isSearchNarrow,
+  canSendToNarrow,
 } from '../utils/narrow';
 
 const styles = StyleSheet.create({
@@ -57,20 +59,22 @@ class NoMessages extends PureComponent<Props> {
   render() {
     const { noMessages, showMessagePlaceholders, narrow } = this.props;
 
-    if (!noMessages || showMessagePlaceholders) return null;
+    if (!noMessages || showMessagePlaceholders) {
+      return null;
+    }
 
     const message = messages.find(x => x.isFunc(narrow)) || {};
 
     return (
       <View style={styles.container}>
         <Label style={styles.text} text={message.text} />
-        <Label text="Why not start the conversation?" />
+        {canSendToNarrow(narrow) ? <Label text="Why not start the conversation?" /> : null}
       </View>
     );
   }
 }
 
-export default connectWithActions((state, props) => ({
+export default connect((state, props) => ({
   showMessagePlaceholders: getShowMessagePlaceholders(props.narrow)(state),
   noMessages: getIfNoMessages(props.narrow)(state),
 }))(NoMessages);
